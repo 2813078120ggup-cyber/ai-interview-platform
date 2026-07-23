@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    --primary: #4A6CF7;
+    --primary-50: #EEF1FE;
+    --primary-100: #DCE3FD;
+    --primary-200: #B9C7FB;
+    --primary-300: #96ABF9;
+    --primary-400: #738FF8;
+    --primary-500: #4A6CF7;
+    --primary-600: #1A3FF2;
+    --primary-700: #0B2BCB;
+    --primary-800: #08209A;
+    --primary-900: #061668;
+    --background: #F8FAFC;
+    --card: #FFFFFF;
+    --text-primary: #1A2332;
+    --text-secondary: #64748B;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', 'PingFang SC', system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    color: var(--text-primary);
+    background: var(--background);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* 自定义滚动条 */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+  }
+}
+
+@layer utilities {
+  /* 文字渐变 */
+  .text-gradient-primary {
+    background: linear-gradient(135deg, #4A6CF7 0%, #738FF8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
