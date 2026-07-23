@@ -22,5 +22,3 @@ Thumbs.db
 # Upload files
 uploads/
 
-# Database
-*.sql
