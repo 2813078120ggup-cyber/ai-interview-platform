@@ -1,0 +1,26 @@
+# IDEA
+.idea/
+*.iml
+
+# Maven
+target/
+*.jar
+
+# Gradle
+.gradle/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+
+# Upload files
+uploads/
+
+# Database
+*.sql
