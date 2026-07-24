@@ -5,14 +5,17 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { AiAssistant } from '@/components/ai-assistant'
+import { AdminPageShell } from '@/components/admin-page-shell'
 import { CandidatePageShell } from '@/components/candidate-page-shell'
 import { PageTransition } from '@/components/page-transition'
 import { profile } from '@/lib/session'
 import { AdminCandidates } from '@/pages/admin-candidates'
+import { AdminInterviewReview } from '@/pages/admin-interview-review'
 import { AdminInterviews } from '@/pages/admin-interviews'
 import { AdminQuestionBanks } from '@/pages/admin-question-banks'
 import { AdminQuestions } from '@/pages/admin-questions'
 import { AdminReports } from '@/pages/admin-reports'
+import { AdminWorkspace } from '@/pages/admin-workspace'
 import { AbilityDashboard } from '@/pages/ability-dashboard'
 import { CandidateLibrary } from '@/pages/candidate-library'
 import { CandidateLobby } from '@/pages/candidate-lobby'
@@ -67,11 +70,15 @@ function AbilityPage() {
 export function App() {
   return <Routes>
     <Route path="/login" element={<PageTransition><LoginPage /></PageTransition>} />
-    <Route path="/admin/interviews" element={<Protected admin><AdminInterviews /></Protected>} />
-    <Route path="/admin/reports" element={<Protected admin><AdminReports /></Protected>} />
-    <Route path="/admin/question-banks" element={<Protected admin><AdminQuestionBanks /></Protected>} />
-    <Route path="/admin/question-banks/:id" element={<Protected admin><AdminQuestions /></Protected>} />
-    <Route path="/admin/candidates" element={<Protected admin><AdminCandidates /></Protected>} />
+    <Route path="/admin/workspace" element={<Protected admin><AdminPageShell><AdminWorkspace /></AdminPageShell></Protected>} />
+    <Route path="/admin/interviews" element={<Protected admin><AdminPageShell><AdminInterviews /></AdminPageShell></Protected>} />
+    <Route path="/admin/interviews/:id/review" element={<Protected admin><AdminPageShell><AdminInterviewReview /></AdminPageShell></Protected>} />
+    <Route path="/admin/interviews/:id/room" element={<Protected admin><AdminPageShell><AdminInterviewReview /></AdminPageShell></Protected>} />
+    <Route path="/admin/reports" element={<Protected admin><AdminPageShell><AdminReports /></AdminPageShell></Protected>} />
+    <Route path="/admin/question-banks" element={<Protected admin><AdminPageShell><AdminQuestionBanks /></AdminPageShell></Protected>} />
+    <Route path="/admin/question-banks/:id" element={<Protected admin><AdminPageShell><AdminQuestions /></AdminPageShell></Protected>} />
+    <Route path="/admin/candidates" element={<Protected admin><AdminPageShell><AdminCandidates /></AdminPageShell></Protected>} />
+    <Route path="/admin" element={<Protected admin><Navigate to="/admin/workspace" replace /></Protected>} />
     <Route path="/candidate/interviews/:id/room" element={<Protected><PageTransition><InterviewRoom /></PageTransition></Protected>} />
     <Route path="/candidate/interviews/:id/report" element={<Protected><PageTransition><CandidateReport /></PageTransition></Protected>} />
     <Route path="/candidate/reports" element={<Protected><Navigate to="/reports" replace /></Protected>} />
