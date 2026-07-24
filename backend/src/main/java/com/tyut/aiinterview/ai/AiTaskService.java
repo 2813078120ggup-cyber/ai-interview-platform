@@ -63,10 +63,17 @@ public class AiTaskService {
     }
 
     @Transactional
-    public AiTask requestFollowUp(Long interviewId, String answer, String question) {
+    public AiTask requestFollowUp(Long interviewId, Long interviewQuestionId, String answer, String question) {
         Interview interview = requireInterview(interviewId);
         requireParticipant(interview);
         if (interview.getStatus() != Interview.IN_PROGRESS) throw BusinessException.badRequest("仅进行中的面试可生成追问");
+        InterviewQuestion interviewQuestion = interviewQuestionMapper.selectById(interviewQuestionId);
+        if (interviewQuestion == null || !interviewId.equals(interviewQuestion.getInterviewId())) {
+            throw BusinessException.notFound("面试题目不存在");
+        }
+        if (isChoiceQuestion(interviewQuestion)) {
+            throw BusinessException.badRequest("选择题提交后将直接进入下一题，不生成 AI 追问");
+        }
         return enqueue(interviewId, null, FOLLOW_UP, null, json("answer", answer, "question", question));
     }
 
@@ -244,6 +251,15 @@ public class AiTaskService {
     private String questionContent(InterviewQuestion question) {
         String content = tree(question.getQuestionSnapshot()).path("content").asText();
         return content == null ? "" : content.trim();
+    }
+
+    private boolean isChoiceQuestion(InterviewQuestion question) {
+        String questionType = tree(question.getQuestionSnapshot()).path("questionType").asText();
+        if (questionType == null || questionType.isBlank()) {
+            Question source = question.getQuestionId() == null ? null : questionMapper.selectById(question.getQuestionId());
+            questionType = source == null ? "" : source.getQuestionType();
+        }
+        return List.of("single_choice", "multiple_choice", "true_false").contains(questionType);
     }
 
     private String joinReference(Question question) {

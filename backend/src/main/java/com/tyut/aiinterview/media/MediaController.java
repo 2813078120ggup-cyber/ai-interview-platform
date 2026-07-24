@@ -35,7 +35,7 @@ public class MediaController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.inline().filename(media.originalName() == null ? "media" : media.originalName()).build().toString()).body(resource);
     }
     @PostMapping("/v1/interviews/{interviewId}/follow-ups")
-    public ApiResponse<AiTask> followUp(@PathVariable Long interviewId, @Valid @RequestBody MediaDtos.FollowUpRequest request) { return ApiResponse.ok(taskService.requestFollowUp(interviewId, request.answer(), request.question())); }
+    public ApiResponse<AiTask> followUp(@PathVariable Long interviewId, @Valid @RequestBody MediaDtos.FollowUpRequest request) { return ApiResponse.ok(taskService.requestFollowUp(interviewId, request.interviewQuestionId(), request.answer(), request.question())); }
     @PostMapping("/v1/interviews/{interviewId}/ai-opening")
     public ApiResponse<AiTask> opening(@PathVariable Long interviewId) { return ApiResponse.ok(taskService.requestOpening(interviewId)); }
     @GetMapping("/v1/ai-tasks/{id}") public ApiResponse<AiTask> task(@PathVariable Long id) { return ApiResponse.ok(taskService.get(id)); }

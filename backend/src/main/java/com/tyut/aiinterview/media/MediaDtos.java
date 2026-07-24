@@ -12,7 +12,8 @@ public final class MediaDtos {
     }
     public record TtsRequest(@NotBlank @Size(max = 4096) String text, @Size(max = 32) String voice) {
     }
-    public record FollowUpRequest(@NotBlank @Size(max = 10000) String answer,
+    public record FollowUpRequest(@NotNull Long interviewQuestionId,
+                                  @NotBlank @Size(max = 10000) String answer,
                                   @NotBlank @Size(max = 4000) String question) {
     }
     public record MediaVO(Long id, String originalName, String contentType, String mediaType, Long sizeBytes, Integer status,
