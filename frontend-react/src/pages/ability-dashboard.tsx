@@ -15,6 +15,12 @@ const labels: Array<[keyof Changes, string]> = [
   ['logicScore', '逻辑思维'],
   ['adaptabilityScore', '应变能力'],
 ]
+const radarDimensions: Array<{ key: keyof Pick<Trend, 'professionalScore' | 'expressionScore' | 'logicScore' | 'adaptabilityScore'>; label: string }> = [
+  { key: 'professionalScore', label: '专业能力' },
+  { key: 'expressionScore', label: '表达能力' },
+  { key: 'logicScore', label: '逻辑思维' },
+  { key: 'adaptabilityScore', label: '应变能力' },
+]
 const day = (value: string) => value?.replace('T', ' ').slice(0, 10) || '-'
 const change = (value: number) => (value > 0 ? '+' : '') + Number(value || 0).toFixed(1)
 
@@ -52,6 +58,24 @@ export function AbilityDashboard() {
         ? 'M ' + points[0].x + ' ' + (height - paddingY) + ' L ' + points.map(point => point.x + ' ' + point.y).join(' L ') + ' L ' + points.at(-1)?.x + ' ' + (height - paddingY) + ' Z'
         : '',
     }
+  }, [data])
+  const radarChart = useMemo(() => {
+    const center = 150; const radius = 92
+    const polar = (value: number, index: number, extra = 0) => {
+      const angle = -Math.PI / 2 + index * Math.PI / 2
+      const distance = radius * value + extra
+      return { x: center + Math.cos(angle) * distance, y: center + Math.sin(angle) * distance }
+    }
+    const values = radarDimensions.map(item => data?.latest?.[item.key] ?? 0)
+    const polygon = (ratio: number) => radarDimensions.map((_, index) => {
+      const point = polar(ratio, index)
+      return point.x + ',' + point.y
+    }).join(' ')
+    const points = values.map((value, index) => {
+      const point = polar(value / 100, index)
+      return point.x + ',' + point.y
+    }).join(' ')
+    return { center, radius, polar, values, polygon, points }
   }, [data])
 
   if (!data?.latest) {
@@ -101,6 +125,7 @@ export function AbilityDashboard() {
       })}
     </div>
 
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,.85fr)]">
     <Card>
       <div className="flex items-start justify-between">
         <div><p className="text-sm font-semibold text-emerald-600">HISTORICAL TREND</p><h2 className="mt-1 text-xl font-bold">历史综合能力变化</h2></div>
@@ -132,5 +157,34 @@ export function AbilityDashboard() {
         </div>
       </div>
     </Card>
+    <Card>
+      <div>
+        <p className="text-sm font-semibold text-emerald-600">ABILITY RADAR</p>
+        <h2 className="mt-1 text-xl font-bold">四维能力画像</h2>
+        <p className="mt-1 text-sm text-muted-foreground">最近一次面试的能力分布</p>
+      </div>
+      <div className="mx-auto mt-5 max-w-[300px]">
+        <svg viewBox="0 0 300 300" className="w-full" role="img" aria-label="专业能力、表达能力、逻辑思维和应变能力的雷达图">
+          {[.25, .5, .75, 1].map(ratio => <polygon key={ratio} points={radarChart.polygon(ratio)} fill="none" stroke="currentColor" strokeOpacity=".12" strokeWidth="1" />)}
+          {radarDimensions.map((item, index) => {
+            const outer = radarChart.polar(1, index)
+            const label = radarChart.polar(1, index, 28)
+            return <g key={item.key}>
+              <line x1={radarChart.center} y1={radarChart.center} x2={outer.x} y2={outer.y} stroke="currentColor" strokeOpacity=".14" />
+              <text x={label.x} y={label.y + 4} textAnchor={index === 1 ? 'start' : index === 3 ? 'end' : 'middle'} className="fill-muted-foreground text-[12px] font-medium">{item.label}</text>
+            </g>
+          })}
+          <polygon points={radarChart.points} fill="#14b8a6" fillOpacity=".25" stroke="#0f766e" strokeWidth="3" strokeLinejoin="round" />
+          {radarChart.values.map((value, index) => {
+            const point = radarChart.polar(value / 100, index)
+            return <circle key={radarDimensions[index].key} cx={point.x} cy={point.y} r="5" fill="white" stroke="#0f766e" strokeWidth="3"><title>{radarDimensions[index].label}：{value}</title></circle>
+          })}
+        </svg>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-border pt-4">
+        {radarDimensions.map((item, index) => <div key={item.key} className="flex items-center justify-between text-sm"><span className="text-muted-foreground">{item.label}</span><strong>{radarChart.values[index]}</strong></div>)}
+      </div>
+    </Card>
+    </div>
   </div>
 }
