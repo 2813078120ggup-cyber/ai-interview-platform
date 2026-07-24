@@ -1,0 +1,4 @@
+@import "tailwindcss";
+@theme { --color-background:#f7faf9; --color-surface:#ffffff; --color-foreground:#10221e; --color-muted:#eef4f1; --color-muted-foreground:#6b7c75; --color-border:#dce8e3; }
+@custom-variant dark (&:where(.dark, .dark *));
+@layer base { * { @apply border-border; } body { @apply min-h-screen bg-background font-sans text-foreground antialiased; } .dark { --color-background:#0b1211; --color-surface:#121c1a; --color-foreground:#ecfdf5; --color-muted:#1b2a26; --color-muted-foreground:#9aa9a3; --color-border:#263832; } }
