@@ -16,3 +16,14 @@ server:
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
+
+ai:
+  llm:
+    api-key: ${LLM_API_KEY:your-api-key}
+    base-url: ${LLM_BASE_URL:https://api.openai.com/v1}
+    model: ${LLM_MODEL:gpt-4o}
+    timeout: ${LLM_TIMEOUT:30000}
+    max-tokens: ${LLM_MAX_TOKENS:4096}
+  evaluation:
+    enabled: ${AI_EVALUATION_ENABLED:true}
+    prompt-template-path: ${AI_PROMPT_TEMPLATE_PATH:classpath:prompts/}
