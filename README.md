@@ -129,7 +129,7 @@ ai-interview-platform
 
 ├── backend
 
-│   └── src/main/java/com/gc/aiinterview
+│   └── src/main/java/com/tyut/aiinterview
 
 │       ├── user
 │       ├── interview
