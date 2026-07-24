@@ -28,7 +28,7 @@ function Protected({ children, admin = false }: { children: React.ReactNode; adm
   const current = profile()
   if (!current) return <Navigate to="/login" replace />
   if (admin && !current.roles.includes('ADMIN')) return <Navigate to="/candidate/interviews" replace />
-  return <>{admin ? <PageTransition>{children}</PageTransition> : children}{!admin && !current.roles.includes('ADMIN') && <AiAssistant />}</>
+  return <>{children}{!admin && !current.roles.includes('ADMIN') && <AiAssistant />}</>
 }
 
 function Overview() {
