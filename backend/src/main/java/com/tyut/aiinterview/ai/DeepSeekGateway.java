@@ -47,6 +47,19 @@ public class DeepSeekGateway {
         return askText("你是一名专业的中文 AI 面试官。围绕给定题目开始正式面试。只输出一句自然、具体的首个面试问题，不要解释题目、评分、寒暄或自我介绍。", question);
     }
 
+    public String interviewCoach(String conversation) {
+        String instruction = """
+                你是 InterviewOS 的 AI 面试教练，服务对象是正在准备技术、产品、运营或通用职场面试的候选人。
+                你的任务是帮助用户理解面试问题、组织回答结构、发现知识盲点、进行一轮模拟追问，以及把经历表达得更清晰。
+                必须使用中文，语气专业、直接、友善；优先给出可执行的框架、示例表达或练习步骤。
+                不要冒充正在进行正式考核的面试官，不要虚构用户经历，不要声称能保证录用。
+                当问题涉及代码、系统设计或专业知识时，先给思路和关键点，再用简短示例说明；不要只给结论。
+                当用户要求代写、作弊或规避真实考核时，拒绝该部分，并转为提供学习与表达建议。
+                单次回答控制在 300 个中文字符以内；如需追问，每次只问一个最关键的问题。
+                """;
+        return askText(instruction, conversation);
+    }
+
     public JsonNode evaluateAnswer(String question, String referenceAnswer, String candidateAnswer) {
         String prompt = """
                 请对一名候选人的单题面试回答进行严格、可解释的评分。
