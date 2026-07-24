@@ -2,6 +2,7 @@ import { BarChart3, Bell, BookOpen, Bot, CalendarDays, LayoutDashboard, Moon, Se
 import type { ReactNode } from 'react'
 import { NavLink } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import { PageTransition } from '@/components/page-transition'
 import { useTheme } from '@/lib/theme'
 import { cn } from '@/lib/utils'
 
@@ -29,7 +30,7 @@ export function CandidatePageShell({ children }: { children: ReactNode }) {
         <div className="flex max-w-md flex-1 items-center gap-2 rounded-xl border border-border bg-surface px-3 py-2"><Search className="h-4 w-4 text-muted-foreground" /><input className="w-full bg-transparent text-sm outline-none" placeholder="搜索面试、题库或报告" /></div>
         <div className="flex items-center gap-2"><Button variant="ghost" className="w-10 px-0" onClick={toggleTheme} aria-label={dark ? '切换为浅色模式' : '切换为深色模式'}>{dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</Button><Button variant="ghost" className="w-10 px-0"><Bell className="h-4 w-4" /></Button><span className="grid h-9 w-9 place-items-center rounded-full bg-teal-100 text-sm font-bold text-teal-800">我</span></div>
       </header>
-      <div className="mx-auto max-w-7xl p-5 lg:p-8">{children}</div>
+      <div className="mx-auto max-w-7xl p-5 lg:p-8"><PageTransition>{children}</PageTransition></div>
     </main>
   </div>
 }

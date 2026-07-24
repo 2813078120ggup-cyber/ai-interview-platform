@@ -1,12 +1,12 @@
-import { AnimatePresence, motion } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Bot, Sparkles } from 'lucide-react'
-import { useLocation } from 'react-router-dom'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { AiAssistant } from '@/components/ai-assistant'
 import { CandidatePageShell } from '@/components/candidate-page-shell'
+import { PageTransition } from '@/components/page-transition'
 import { profile } from '@/lib/session'
 import { AdminCandidates } from '@/pages/admin-candidates'
 import { AdminInterviews } from '@/pages/admin-interviews'
@@ -25,7 +25,7 @@ function Protected({ children, admin = false }: { children: React.ReactNode; adm
   const current = profile()
   if (!current) return <Navigate to="/login" replace />
   if (admin && !current.roles.includes('ADMIN')) return <Navigate to="/candidate/interviews" replace />
-  return <>{children}{!admin && !current.roles.includes('ADMIN') && <AiAssistant />}</>
+  return <>{admin ? <PageTransition>{children}</PageTransition> : children}{!admin && !current.roles.includes('ADMIN') && <AiAssistant />}</>
 }
 
 function Overview() {
@@ -55,10 +55,9 @@ function Overview() {
 }
 
 function CandidateWorkspace() {
-  const location = useLocation()
-  return <CandidatePageShell><AnimatePresence mode="wait"><motion.div key={location.pathname} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: .18 }}>
+  return <CandidatePageShell>
     <Routes><Route path="/workspace" element={<Overview />} /><Route path="/candidate/interviews" element={<CandidateLobby />} /><Route path="*" element={<Overview />} /></Routes>
-  </motion.div></AnimatePresence></CandidatePageShell>
+  </CandidatePageShell>
 }
 
 function AbilityPage() {
@@ -67,14 +66,14 @@ function AbilityPage() {
 
 export function App() {
   return <Routes>
-    <Route path="/login" element={<LoginPage />} />
+    <Route path="/login" element={<PageTransition><LoginPage /></PageTransition>} />
     <Route path="/admin/interviews" element={<Protected admin><AdminInterviews /></Protected>} />
     <Route path="/admin/reports" element={<Protected admin><AdminReports /></Protected>} />
     <Route path="/admin/question-banks" element={<Protected admin><AdminQuestionBanks /></Protected>} />
     <Route path="/admin/question-banks/:id" element={<Protected admin><AdminQuestions /></Protected>} />
     <Route path="/admin/candidates" element={<Protected admin><AdminCandidates /></Protected>} />
-    <Route path="/candidate/interviews/:id/room" element={<Protected><InterviewRoom /></Protected>} />
-    <Route path="/candidate/interviews/:id/report" element={<Protected><CandidateReport /></Protected>} />
+    <Route path="/candidate/interviews/:id/room" element={<Protected><PageTransition><InterviewRoom /></PageTransition></Protected>} />
+    <Route path="/candidate/interviews/:id/report" element={<Protected><PageTransition><CandidateReport /></PageTransition></Protected>} />
     <Route path="/candidate/reports" element={<Protected><Navigate to="/reports" replace /></Protected>} />
     <Route path="/reports" element={<Protected><AbilityPage /></Protected>} />
     <Route path="/library" element={<Protected><CandidateLibrary /></Protected>} />
