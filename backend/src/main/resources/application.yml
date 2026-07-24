@@ -2,17 +2,21 @@ server:
   port: 8080
 
 spring:
+  application:
+    name: ai-interview-platform
   datasource:
     url: jdbc:mysql://localhost:3306/ai_interview?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&connectTimeout=5000&createDatabaseIfNotExist=true
     username: root
     password: 123456
     driver-class-name: com.mysql.cj.jdbc.Driver
-
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
   sql:
     init:
       mode: always
       schema-locations: classpath:schema-mysql.sql
-
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: Asia/Shanghai
@@ -33,6 +37,17 @@ mybatis-plus:
 jwt:
   secret: YWlJbnRlcnZpZXdQbGF0Zm9ybVNlY3JldEtleUZvckpXVDIwMjQ=
   expiration: 86400000
+
+ai:
+  llm:
+    api-key: ${LLM_API_KEY:your-api-key}
+    base-url: ${LLM_BASE_URL:https://api.openai.com/v1}
+    model: ${LLM_MODEL:gpt-4o}
+    timeout: ${LLM_TIMEOUT:30000}
+    max-tokens: ${LLM_MAX_TOKENS:4096}
+  evaluation:
+    enabled: ${AI_EVALUATION_ENABLED:true}
+    prompt-template-path: ${AI_PROMPT_TEMPLATE_PATH:classpath:prompts/}
 
 logging:
   level:

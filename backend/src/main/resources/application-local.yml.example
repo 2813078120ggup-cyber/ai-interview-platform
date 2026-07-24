@@ -1,0 +1,6 @@
+# Copy this file to application-local.yml for personal overrides. Never commit credentials.
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/ai_interview?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: root

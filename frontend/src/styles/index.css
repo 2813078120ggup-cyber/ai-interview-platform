@@ -1,0 +1,9 @@
+:root {
+  font-family: Inter, "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: #1f2937;
+  background: #f8fafc;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+.app-shell { max-width: 960px; margin: 0 auto; padding: 48px 24px; }

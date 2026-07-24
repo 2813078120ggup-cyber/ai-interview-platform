@@ -28,3 +28,15 @@ uploads/
 # Frontend
 frontend/node_modules/
 frontend/dist/
+
+# Next.js
+.next/
+out/
+
+# Node.js
+node_modules/
+yarn.lock
+pnpm-lock.yaml
+
+# Documents
+*.docx
