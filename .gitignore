@@ -5,6 +5,11 @@
 # Maven
 target/
 *.jar
+backend/*mvn_repo/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
 
 # Gradle
 .gradle/
@@ -18,6 +23,9 @@ Thumbs.db
 
 # Env
 .env
+
+# Local agent tooling
+.kilo/
 
 # Upload files
 uploads/

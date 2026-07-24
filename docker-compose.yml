@@ -1,0 +1,14 @@
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: ai_interview
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./docs/database:/docker-entrypoint-initdb.d:ro
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"

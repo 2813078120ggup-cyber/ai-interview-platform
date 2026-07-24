@@ -6,7 +6,7 @@
 - 存储引擎：InnoDB
 - 字符集：`utf8mb4`
 - 排序规则：`utf8mb4_0900_ai_ci`
-- DDL 文件：`schema_v1.sql`
+- DDL 文件：`01-schema_v1.sql`
 - 主键类型：除关联表外统一使用 `BIGINT UNSIGNED AUTO_INCREMENT`
 - 时间字段：使用 `DATETIME`，创建时间默认 `CURRENT_TIMESTAMP`
 - 软删除：`deleted_at` 为空表示有效，非空表示已删除
@@ -459,6 +459,8 @@
 | `generation_method` | VARCHAR(10) | 否 | `ai` | CHECK | 报告生成方式 |
 | `generated_by` | BIGINT UNSIGNED | 是 | NULL | FK | 手动编辑人或操作人 ID |
 | `pdf_url` | VARCHAR(512) | 是 | NULL |  | 导出的 PDF 资源地址 |
+| `status` | TINYINT | 否 | 0 | CHECK | 报告状态，草稿或已发布 |
+| `published_at` | DATETIME | 是 | NULL |  | 报告发布时间，仅已发布报告有值 |
 | `generated_at` | DATETIME | 否 | CURRENT_TIMESTAMP |  | 报告生成时间 |
 | `updated_at` | DATETIME | 否 | CURRENT_TIMESTAMP | ON UPDATE | 最近更新时间 |
 
@@ -468,6 +470,8 @@
 |---|---|---|
 | `generation_method` | `ai` | AI 自动生成 |
 | `generation_method` | `manual` | HR 或其他授权用户手动编辑 |
+| `status` | `0` | 草稿，仅 HR 和管理员可查看 |
+| `status` | `1` | 已发布，候选人可查看自己的报告 |
 
 ### 12.4 索引说明
 
@@ -477,6 +481,7 @@
 | `uk_report_interview` | 唯一索引 | `interview_id` | 保证一次面试最多生成一份最终报告 |
 | `idx_report_generated_at` | 普通索引 | `generated_at` | 按生成时间查询报告 |
 | `idx_report_generated_by` | 普通索引 | `generated_by` | 查询用户生成或编辑的报告 |
+| `idx_report_status_published_at` | 普通联合索引 | `status, published_at` | 按发布状态和时间查询报告 |
 
 ### 12.5 外键说明
 

@@ -184,8 +184,7 @@ CREATE TABLE IF NOT EXISTS `evaluation` (
   CONSTRAINT `chk_evaluation_expression` CHECK (`expression_score` BETWEEN 0 AND 100),
   CONSTRAINT `chk_evaluation_logic` CHECK (`logic_score` BETWEEN 0 AND 100),
   CONSTRAINT `chk_evaluation_adaptability` CHECK (`adaptability_score` BETWEEN 0 AND 100),
-  CONSTRAINT `chk_evaluation_overall` CHECK (`overall_score` BETWEEN 0 AND 100),
-  CONSTRAINT `chk_evaluation_evaluator` CHECK ((`source` = 'ai' AND `evaluator_id` IS NULL) OR (`source` = 'human' AND `evaluator_id` IS NOT NULL))
+  CONSTRAINT `chk_evaluation_overall` CHECK (`overall_score` BETWEEN 0 AND 100)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Human and AI question evaluations';
 
 CREATE TABLE IF NOT EXISTS `report` (
@@ -203,15 +202,19 @@ CREATE TABLE IF NOT EXISTS `report` (
   `generation_method`       VARCHAR(10)     NOT NULL DEFAULT 'ai' COMMENT 'ai or manual',
   `generated_by`            BIGINT UNSIGNED DEFAULT NULL COMMENT 'Manual editor or operator user id',
   `pdf_url`                 VARCHAR(512)    DEFAULT NULL COMMENT 'Exported PDF URL',
+  `status`                  TINYINT         NOT NULL DEFAULT 0 COMMENT '0 draft, 1 published',
+  `published_at`            DATETIME        DEFAULT NULL COMMENT 'Publication time',
   `generated_at`            DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Generation time',
   `updated_at`              DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Update time',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_report_interview` (`interview_id`),
   KEY `idx_report_generated_at` (`generated_at`),
   KEY `idx_report_generated_by` (`generated_by`),
+  KEY `idx_report_status_published_at` (`status`, `published_at`),
   CONSTRAINT `fk_report_interview` FOREIGN KEY (`interview_id`) REFERENCES `interview` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
   CONSTRAINT `fk_report_generator` FOREIGN KEY (`generated_by`) REFERENCES `user` (`id`) ON DELETE SET NULL ON UPDATE RESTRICT,
   CONSTRAINT `chk_report_method` CHECK (`generation_method` IN ('ai', 'manual')),
+  CONSTRAINT `chk_report_status` CHECK (`status` IN (0, 1)),
   CONSTRAINT `chk_report_total` CHECK (`total_score` BETWEEN 0 AND 100),
   CONSTRAINT `chk_report_professional` CHECK (`professional_score` IS NULL OR `professional_score` BETWEEN 0 AND 100),
   CONSTRAINT `chk_report_expression` CHECK (`expression_score` IS NULL OR `expression_score` BETWEEN 0 AND 100),
