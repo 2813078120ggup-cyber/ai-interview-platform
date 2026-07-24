@@ -1,9 +1,283 @@
 :root {
   font-family: Inter, "PingFang SC", "Microsoft YaHei", sans-serif;
-  color: #1f2937;
-  background: #f8fafc;
+  color: #172033;
+  background: #eef2f7;
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; }
-.app-shell { max-width: 960px; margin: 0 auto; padding: 48px 24px; }
+body { margin: 0; min-width: 1180px; }
+button, input, textarea { font: inherit; }
+
+.app-layout {
+  min-height: 100vh;
+}
+
+.sidebar {
+  background: #132238;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  color: #fff;
+  padding: 22px 14px;
+}
+
+.brand {
+  display: grid;
+  gap: 6px;
+  padding: 0 10px 20px;
+}
+
+.brand strong {
+  font-size: 20px;
+}
+
+.brand span {
+  color: #9fb1c9;
+  font-size: 13px;
+}
+
+.module-menu {
+  border-right: 0;
+  background: transparent;
+}
+
+.module-menu .el-menu-item {
+  border-radius: 8px;
+  color: #c7d2e3;
+  margin-bottom: 6px;
+}
+
+.module-menu .el-menu-item.is-active,
+.module-menu .el-menu-item:hover {
+  background: #23405f;
+  color: #fff;
+}
+
+.workspace {
+  padding: 28px;
+}
+
+.topbar,
+.table-toolbar {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.topbar {
+  margin-bottom: 20px;
+}
+
+.eyebrow {
+  color: #54708f;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin: 0 0 6px;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  font-size: 28px;
+  margin-bottom: 0;
+}
+
+h2 {
+  font-size: 20px;
+  margin-bottom: 6px;
+}
+
+h3 {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+p {
+  color: #607089;
+  line-height: 1.7;
+}
+
+.stats-grid,
+.bank-grid,
+.dimension-grid,
+.report-notes {
+  display: grid;
+  gap: 14px;
+}
+
+.stats-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 18px;
+}
+
+.stat-card,
+.panel,
+.bank-card,
+.flow-item,
+.report-summary,
+.report-notes article,
+.dimension-grid article,
+.report-visuals {
+  background: #fff;
+  border: 1px solid #dbe4ef;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(18, 32, 56, 0.06);
+}
+
+.stat-card {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+}
+
+.stat-card span {
+  color: #607089;
+}
+
+.stat-card strong {
+  color: #172033;
+  font-size: 30px;
+}
+
+.panel {
+  padding: 20px;
+}
+
+.panel-title {
+  margin-bottom: 18px;
+}
+
+.split-layout {
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  gap: 18px;
+}
+
+.session-form {
+  display: grid;
+}
+
+.flow-board {
+  display: grid;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.flow-item {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  padding: 16px;
+}
+
+.bank-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 18px 0;
+}
+
+.bank-card {
+  display: flex;
+  justify-content: space-between;
+  min-height: 150px;
+  padding: 18px;
+}
+
+.bank-card span {
+  color: #54708f;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.bank-card strong {
+  align-self: end;
+  color: #2563eb;
+  font-size: 34px;
+}
+
+.search-input {
+  max-width: 280px;
+}
+
+.tag {
+  margin: 2px 4px 2px 0;
+}
+
+.generator-preview {
+  align-content: center;
+  display: grid;
+  justify-items: center;
+  min-height: 420px;
+  text-align: center;
+}
+
+.generator-preview .el-icon {
+  color: #2563eb;
+  font-size: 54px;
+  margin-bottom: 14px;
+}
+
+.report-layout {
+  display: grid;
+  gap: 16px;
+}
+
+.report-summary {
+  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 18px;
+  padding: 20px;
+}
+
+.score-ring {
+  align-items: center;
+  border: 8px solid #d6e4ff;
+  border-radius: 999px;
+  display: grid;
+  height: 120px;
+  justify-items: center;
+  width: 120px;
+}
+
+.score-ring strong {
+  color: #2563eb;
+  font-size: 34px;
+}
+
+.score-ring span {
+  color: #607089;
+  font-size: 12px;
+}
+
+.dimension-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.dimension-grid article,
+.report-notes article,
+.report-visuals {
+  padding: 16px;
+}
+
+.dimension-grid strong {
+  display: block;
+  font-size: 28px;
+  margin-top: 8px;
+}
+
+.report-notes {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.visual-row {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 64px minmax(0, 1fr);
+  margin-bottom: 12px;
+}
