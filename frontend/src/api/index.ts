@@ -41,6 +41,25 @@ http.interceptors.response.use(
 
 export default http
 
+export const api = {
+  async get<T>(url: string, config?: Parameters<typeof http.get>[1]) {
+    const response = await http.get<T>(url, config)
+    return response.data
+  },
+  async post<T>(url: string, data?: unknown, config?: Parameters<typeof http.post>[2]) {
+    const response = await http.post<T>(url, data, config)
+    return response.data
+  },
+  async put<T>(url: string, data?: unknown, config?: Parameters<typeof http.put>[2]) {
+    const response = await http.put<T>(url, data, config)
+    return response.data
+  },
+  async delete<T>(url: string, config?: Parameters<typeof http.delete>[1]) {
+    const response = await http.delete<T>(url, config)
+    return response.data
+  },
+}
+
 /* ===== Auth API ===== */
 export interface LoginParams {
   username: string

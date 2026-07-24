@@ -1,7 +1,7 @@
 package com.tyut.aiinterview.ai.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.squareup.okhttp.*;
+import okhttp3.*;
 import com.tyut.aiinterview.ai.config.AiConfig;
 import com.tyut.aiinterview.ai.dto.ChatMessage;
 import com.tyut.aiinterview.ai.dto.ChatRequest;

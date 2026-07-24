@@ -95,7 +95,7 @@ function fillFromApi(r: ReportVO) {
 
 /* ===== Radar Data ===== */
 const radarData = computed<RadarData[]>(() =>
-  report.dimensions.map(d => ({ label: d.label, value: d.score, fullMark: 100 })),
+  report.value.dimensions.map((dimension) => ({ label: dimension.label, value: dimension.score, fullMark: 100 })),
 )
 
 /* ===== Score Color ===== */
@@ -111,12 +111,12 @@ function scoreLabel(s: number): string {
   if (s >= 80) return '良好'
   if (s >= 70) return '中等'
   if (s >= 60) return '合格'
-  return '待提升'
+  return '������'
 }
 
 /* ===== Overall score ring ===== */
 const circumference = 2 * Math.PI * 64
-const dashOffset = computed(() => circumference * (1 - report.totalScore / 100))
+const dashOffset = computed(() => circumference * (1 - report.value.totalScore / 100))
 
 /* ===== PDF Export ===== */
 const reportRef = ref<HTMLElement | null>(null)
@@ -155,7 +155,7 @@ async function exportPDF() {
       heightLeft -= pageHeight - 20
     }
 
-    pdf.save(`${report.candidateName}-面试报告.pdf`)
+    pdf.save(`${report.value.candidateName}-���Ա���.pdf`)
     ElMessage.success('PDF 导出成功')
   } catch (e) {
     ElMessage.error('导出失败，请重试')
@@ -230,7 +230,7 @@ async function exportPDF() {
         <div class="card">
           <h2 class="card__title">
             <Target :size="18" />
-            综合能力雷达图
+            综合能力雷达�?
           </h2>
           <div class="card__radar">
             <RadarChart
@@ -245,7 +245,7 @@ async function exportPDF() {
         <div class="card">
           <h2 class="card__title">
             <TrendingUp :size="18" />
-            各维度得分
+            各维度得�?
           </h2>
           <div class="dim-list">
             <div v-for="d in report.dimensions" :key="d.label" class="dim-item">
@@ -316,7 +316,7 @@ async function exportPDF() {
       <div class="export-bar no-print">
         <button class="export-btn" :disabled="exporting" @click="exportPDF">
           <Download :size="18" />
-          <span>{{ exporting ? '导出中...' : '导出 PDF 报告' }}</span>
+          <span>{{ exporting ? '导出�?..' : '导出 PDF 报告' }}</span>
         </button>
       </div>
     </div>
@@ -385,7 +385,7 @@ async function exportPDF() {
 }
 
 /* ==========================================
-   3. HERO — centered score + info
+   3. HERO �?centered score + info
    ========================================== */
 .hero {
   display: flex;
