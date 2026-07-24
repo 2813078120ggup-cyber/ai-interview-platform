@@ -125,7 +125,7 @@ export function AbilityDashboard() {
       })}
     </div>
 
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,.85fr)]">
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.9fr)_minmax(260px,.6fr)]">
     <Card>
       <div className="flex items-start justify-between">
         <div><p className="text-sm font-semibold text-emerald-600">HISTORICAL TREND</p><h2 className="mt-1 text-xl font-bold">历史综合能力变化</h2></div>
@@ -157,13 +157,13 @@ export function AbilityDashboard() {
         </div>
       </div>
     </Card>
-    <Card>
+    <Card className="self-start overflow-hidden">
       <div>
         <p className="text-sm font-semibold text-emerald-600">ABILITY RADAR</p>
         <h2 className="mt-1 text-xl font-bold">四维能力画像</h2>
         <p className="mt-1 text-sm text-muted-foreground">最近一次面试的能力分布</p>
       </div>
-      <div className="mx-auto mt-5 max-w-[300px]">
+      <div className="mx-auto mt-5 max-w-[230px] rounded-[22px] border border-emerald-100/80 bg-gradient-to-b from-emerald-50/70 to-transparent p-2 dark:border-emerald-400/10 dark:from-emerald-400/5">
         <svg viewBox="0 0 300 300" className="w-full" role="img" aria-label="专业能力、表达能力、逻辑思维和应变能力的雷达图">
           {[.25, .5, .75, 1].map(ratio => <polygon key={ratio} points={radarChart.polygon(ratio)} fill="none" stroke="currentColor" strokeOpacity=".12" strokeWidth="1" />)}
           {radarDimensions.map((item, index) => {
@@ -181,7 +181,7 @@ export function AbilityDashboard() {
           })}
         </svg>
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-border pt-4">
+      <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-border pt-4">
         {radarDimensions.map((item, index) => <div key={item.key} className="flex items-center justify-between text-sm"><span className="text-muted-foreground">{item.label}</span><strong>{radarChart.values[index]}</strong></div>)}
       </div>
     </Card>

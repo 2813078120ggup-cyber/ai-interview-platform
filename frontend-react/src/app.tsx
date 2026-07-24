@@ -1,32 +1,86 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { BarChart3, Bell, Bot, CalendarDays, ChevronLeft, FileText, LayoutDashboard, Menu, Moon, Search, Settings, Sparkles, Sun, Users } from 'lucide-react'
-import { useState } from 'react'
-import { NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { Bot, Sparkles } from 'lucide-react'
+import { useLocation } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { cn } from '@/lib/utils'
-import { CandidateLobby } from '@/pages/candidate-lobby'
-import { InterviewRoom } from '@/pages/interview-room'
-import { CandidateReport } from '@/pages/candidate-report'
-import { AbilityDashboard } from '@/pages/ability-dashboard'
 import { AiAssistant } from '@/components/ai-assistant'
+import { CandidatePageShell } from '@/components/candidate-page-shell'
+import { profile } from '@/lib/session'
+import { AdminCandidates } from '@/pages/admin-candidates'
 import { AdminInterviews } from '@/pages/admin-interviews'
-import { AdminReports } from '@/pages/admin-reports'
 import { AdminQuestionBanks } from '@/pages/admin-question-banks'
 import { AdminQuestions } from '@/pages/admin-questions'
-import { AdminCandidates } from '@/pages/admin-candidates'
-import { LoginPage } from '@/pages/login'
+import { AdminReports } from '@/pages/admin-reports'
+import { AbilityDashboard } from '@/pages/ability-dashboard'
 import { CandidateLibrary } from '@/pages/candidate-library'
+import { CandidateLobby } from '@/pages/candidate-lobby'
 import { CandidateProfile } from '@/pages/candidate-profile'
-import { profile } from '@/lib/session'
-import { useTheme } from '@/lib/theme'
+import { CandidateReport } from '@/pages/candidate-report'
+import { InterviewRoom } from '@/pages/interview-room'
+import { LoginPage } from '@/pages/login'
 
-function RoomShell(){ return <InterviewRoom/> }
-function Protected({children,admin=false}:{children:React.ReactNode;admin?:boolean}){const current=profile();if(!current)return <Navigate to="/login" replace/>;if(admin&&!current.roles.includes('ADMIN'))return <Navigate to="/candidate/interviews" replace/>;return <>{children}{!admin&&!current.roles.includes('ADMIN')&&<AiAssistant/>}</>}
-function AbilityShell(){return <div className="min-h-screen bg-background"><aside className="fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-border bg-surface p-4"><div className="flex items-center gap-3 px-2 py-3"><span className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-600 text-white"><Bot className="h-5 w-5"/></span><div><strong>InterviewOS</strong><p className="text-xs text-muted-foreground">AI 面试评测平台</p></div></div><div className="my-6 rounded-2xl bg-emerald-50 p-3 dark:bg-emerald-400/10"><div className="flex items-center gap-2 text-sm font-semibold text-emerald-700 dark:text-emerald-300"><span className="h-2 w-2 rounded-full bg-emerald-500"/>AI 服务正常</div><p className="mt-1 text-xs text-muted-foreground">DeepSeek 面试官在线</p></div><nav className="space-y-1"><NavLink to="/workspace" className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted"><LayoutDashboard className="h-4 w-4"/>工作概览</NavLink><NavLink to="/candidate/interviews" className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted"><CalendarDays className="h-4 w-4"/>AI 面试</NavLink><NavLink to="/reports" className="flex items-center gap-3 rounded-xl bg-emerald-600 px-3 py-2.5 text-sm font-semibold text-white shadow-sm"><BarChart3 className="h-4 w-4"/>能力报告</NavLink></nav><div className="mt-auto border-t border-border px-2 pt-4 text-xs text-muted-foreground">v2.0.0 · React Migration</div></aside><main className="min-h-screen pl-64"><header className="flex h-20 items-center justify-between border-b border-border bg-background/80 px-8 backdrop-blur"><div className="flex max-w-md flex-1 items-center gap-2 rounded-xl border border-border bg-surface px-3 py-2"><Search className="h-4 w-4 text-muted-foreground"/><input className="w-full bg-transparent text-sm outline-none" placeholder="搜索面试、候选人或报告"/></div><div className="flex items-center gap-2"><Button variant="ghost" className="w-10 px-0"><Bell className="h-4 w-4"/></Button><span className="grid h-9 w-9 place-items-center rounded-full bg-teal-100 text-sm font-bold text-teal-800">刘</span></div></header><div className="mx-auto max-w-7xl p-5 lg:p-8"><AbilityDashboard/></div></main></div>}
+function Protected({ children, admin = false }: { children: React.ReactNode; admin?: boolean }) {
+  const current = profile()
+  if (!current) return <Navigate to="/login" replace />
+  if (admin && !current.roles.includes('ADMIN')) return <Navigate to="/candidate/interviews" replace />
+  return <>{children}{!admin && !current.roles.includes('ADMIN') && <AiAssistant />}</>
+}
 
-const navigation = [{ to: '/workspace', label: '工作概览', icon: LayoutDashboard }, { to: '/interviews', label: 'AI 面试', icon: CalendarDays }, { to: '/reports', label: '能力报告', icon: BarChart3 }, { to: '/library', label: '题库与岗位', icon: FileText }, { to: '/users', label: '用户管理', icon: Users }]
-function Overview() { const stats = [['本周练习', '06', '+2 场'], ['平均能力分', '82', '+4.6'], ['待完成面试', '03', '今日'], ['AI 反馈', '18', '已生成']]; return <div className="space-y-6"><div><p className="text-sm font-semibold text-emerald-600">AI INTERVIEW WORKSPACE</p><h1 className="mt-2 text-3xl font-bold tracking-tight">让每一次面试，都成为进步。</h1><p className="mt-2 text-muted-foreground">查看训练进度、开始模拟面试，并追踪你的能力变化。</p></div><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{stats.map(([label, value, hint], i) => <motion.div key={label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * .05 }}><Card><p className="text-sm text-muted-foreground">{label}</p><div className="mt-4 flex items-end justify-between"><strong className="text-3xl tracking-tight">{value}</strong><Badge tone="success">{hint}</Badge></div></Card></motion.div>)}</div><div className="grid gap-6 xl:grid-cols-[1.45fr_1fr]"><Card><div className="flex items-center justify-between"><div><h2 className="font-bold">继续你的训练</h2><p className="mt-1 text-sm text-muted-foreground">Java 核心能力模拟面试 · 45 分钟</p></div><Badge tone="warning">待开始</Badge></div><div className="mt-7 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 p-6 text-white"><Bot className="h-7 w-7"/><h3 className="mt-5 text-xl font-bold">AI 面试官已经就绪</h3><p className="mt-2 text-sm text-emerald-50">开启语音或文字对话，获得逐题反馈与完整能力报告。</p><Button className="mt-5 bg-white text-emerald-800 hover:bg-emerald-50">开始模拟面试 <Sparkles className="h-4 w-4"/></Button></div></Card><Card><h2 className="font-bold">能力趋势</h2><p className="mt-1 text-sm text-muted-foreground">过去 6 次面试的综合表现</p><div className="mt-8 flex h-40 items-end gap-3">{[58,65,61,72,76,82].map((v,i)=><div key={i} className="flex flex-1 flex-col items-center gap-2"><div className="w-full rounded-t-lg bg-gradient-to-t from-emerald-600 to-teal-300" style={{height:`${v}%`}}/><span className="text-xs text-muted-foreground">{i+1}</span></div>)}</div></Card></div></div> }
-function AppShell() { const {dark,toggleTheme}=useTheme(); const [open,setOpen]=useState(false); const location=useLocation(); return <div className="min-h-screen bg-background"><aside className={cn('fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-border bg-surface p-4 transition-transform lg:translate-x-0',open?'translate-x-0':'-translate-x-full')}><div className="flex items-center gap-3 px-2 py-3"><span className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-600 text-white"><Bot className="h-5 w-5"/></span><div><strong>InterviewOS</strong><p className="text-xs text-muted-foreground">AI 面试评测平台</p></div><button className="ml-auto lg:hidden" onClick={()=>setOpen(false)}><ChevronLeft/></button></div><div className="my-6 rounded-2xl bg-emerald-50 p-3 dark:bg-emerald-400/10"><div className="flex items-center gap-2 text-sm font-semibold text-emerald-700 dark:text-emerald-300"><span className="h-2 w-2 rounded-full bg-emerald-500"/> AI 服务正常</div><p className="mt-1 text-xs text-muted-foreground">DeepSeek 面试官在线</p></div><nav className="space-y-1">{navigation.map(({to,label,icon:Icon})=><NavLink key={to} to={to} onClick={()=>setOpen(false)} className={({isActive})=>cn('flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition',isActive?'bg-emerald-600 text-white shadow-sm':'text-muted-foreground hover:bg-muted hover:text-foreground')}><Icon className="h-4 w-4"/>{label}</NavLink>)}</nav><div className="mt-auto border-t border-border px-2 pt-4 text-xs text-muted-foreground">v2.0.0 · React Migration</div></aside>{open&&<button className="fixed inset-0 z-30 bg-black/20 lg:hidden" onClick={()=>setOpen(false)}/>}<main className="min-h-screen lg:pl-64"><header className="sticky top-0 z-20 flex h-20 items-center justify-between border-b border-border bg-background/80 px-5 backdrop-blur lg:px-8"><button className="lg:hidden" onClick={()=>setOpen(true)}><Menu/></button><div className="hidden max-w-md flex-1 items-center gap-2 rounded-xl border border-border bg-surface px-3 py-2 md:flex"><Search className="h-4 w-4 text-muted-foreground"/><input className="w-full bg-transparent text-sm outline-none" placeholder="搜索面试、候选人或报告"/></div><div className="ml-auto flex items-center gap-2"><Button variant="ghost" className="w-10 px-0" onClick={toggleTheme} aria-label={dark?'切换为浅色模式':'切换为深色模式'}>{dark?<Sun className="h-4 w-4"/>:<Moon className="h-4 w-4"/>}</Button><Button variant="ghost" className="w-10 px-0"><Bell className="h-4 w-4"/></Button><span className="grid h-9 w-9 place-items-center rounded-full bg-teal-100 text-sm font-bold text-teal-800">刘</span></div></header><div className="mx-auto max-w-7xl p-5 lg:p-8"><AnimatePresence mode="wait"><motion.div key={location.pathname} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-8}} transition={{duration:.18}}><Routes><Route path="/workspace" element={<Overview/>}/><Route path="/candidate/interviews" element={<CandidateLobby/>}/><Route path="*" element={<Overview/>}/></Routes></motion.div></AnimatePresence></div></main></div> }
-export function App(){ return <Routes><Route path="/login" element={<LoginPage/>}/><Route path="/admin/interviews" element={<Protected admin><AdminInterviews/></Protected>}/><Route path="/admin/reports" element={<Protected admin><AdminReports/></Protected>}/><Route path="/admin/question-banks" element={<Protected admin><AdminQuestionBanks/></Protected>}/><Route path="/admin/question-banks/:id" element={<Protected admin><AdminQuestions/></Protected>}/><Route path="/admin/candidates" element={<Protected admin><AdminCandidates/></Protected>}/><Route path="/candidate/interviews/:id/room" element={<Protected><RoomShell/></Protected>}/><Route path="/candidate/interviews/:id/report" element={<Protected><CandidateReport/></Protected>}/><Route path="/candidate/reports" element={<Protected><AbilityShell/></Protected>}/><Route path="/library" element={<Protected><CandidateLibrary/></Protected>}/><Route path="/users" element={<Protected><CandidateProfile/></Protected>}/><Route path="/interviews" element={<Navigate to="/candidate/interviews" replace/>}/><Route path="/reports" element={<Protected><AbilityShell/></Protected>}/><Route path="*" element={<Protected><AppShell/></Protected>}/><Route path="/" element={<Navigate to="/login" replace/>}/></Routes> }
+function Overview() {
+  const stats = [['本周练习', '06', '+2 场'], ['平均能力分', '82', '+4.6'], ['待完成面试', '03', '今日'], ['AI 反馈', '18', '已生成']]
+  return <div className="space-y-6">
+    <div>
+      <p className="text-sm font-semibold text-emerald-600">AI INTERVIEW WORKSPACE</p>
+      <h1 className="mt-2 text-3xl font-bold tracking-tight">让每一次面试，都成为进步。</h1>
+      <p className="mt-2 text-muted-foreground">查看训练进度、开始模拟面试，并追踪你的能力变化。</p>
+    </div>
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {stats.map(([label, value, hint], index) => <motion.div key={label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * .05 }}>
+        <Card><p className="text-sm text-muted-foreground">{label}</p><div className="mt-4 flex items-end justify-between"><strong className="text-3xl tracking-tight">{value}</strong><Badge tone="success">{hint}</Badge></div></Card>
+      </motion.div>)}
+    </div>
+    <div className="grid gap-6 xl:grid-cols-[1.45fr_1fr]">
+      <Card>
+        <div className="flex items-center justify-between"><div><h2 className="font-bold">继续你的训练</h2><p className="mt-1 text-sm text-muted-foreground">Java 核心能力模拟面试 · 45 分钟</p></div><Badge tone="warning">待开始</Badge></div>
+        <div className="mt-7 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 p-6 text-white"><Bot className="h-7 w-7" /><h3 className="mt-5 text-xl font-bold">AI 面试官已经就绪</h3><p className="mt-2 text-sm text-emerald-50">开启语音或文字对话，获得逐题反馈与完整能力报告。</p><Button className="mt-5 bg-white text-emerald-800 hover:bg-emerald-50">开始模拟面试 <Sparkles className="h-4 w-4" /></Button></div>
+      </Card>
+      <Card>
+        <h2 className="font-bold">能力趋势</h2><p className="mt-1 text-sm text-muted-foreground">过去 6 次面试的综合表现</p>
+        <div className="mt-8 flex h-40 items-end gap-3">{[58, 65, 61, 72, 76, 82].map((value, index) => <div key={index} className="flex flex-1 flex-col items-center gap-2"><div className="w-full rounded-t-lg bg-gradient-to-t from-emerald-600 to-teal-300" style={{ height: value + '%' }} /><span className="text-xs text-muted-foreground">{index + 1}</span></div>)}</div>
+      </Card>
+    </div>
+  </div>
+}
+
+function CandidateWorkspace() {
+  const location = useLocation()
+  return <CandidatePageShell><AnimatePresence mode="wait"><motion.div key={location.pathname} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: .18 }}>
+    <Routes><Route path="/workspace" element={<Overview />} /><Route path="/candidate/interviews" element={<CandidateLobby />} /><Route path="*" element={<Overview />} /></Routes>
+  </motion.div></AnimatePresence></CandidatePageShell>
+}
+
+function AbilityPage() {
+  return <CandidatePageShell><AbilityDashboard /></CandidatePageShell>
+}
+
+export function App() {
+  return <Routes>
+    <Route path="/login" element={<LoginPage />} />
+    <Route path="/admin/interviews" element={<Protected admin><AdminInterviews /></Protected>} />
+    <Route path="/admin/reports" element={<Protected admin><AdminReports /></Protected>} />
+    <Route path="/admin/question-banks" element={<Protected admin><AdminQuestionBanks /></Protected>} />
+    <Route path="/admin/question-banks/:id" element={<Protected admin><AdminQuestions /></Protected>} />
+    <Route path="/admin/candidates" element={<Protected admin><AdminCandidates /></Protected>} />
+    <Route path="/candidate/interviews/:id/room" element={<Protected><InterviewRoom /></Protected>} />
+    <Route path="/candidate/interviews/:id/report" element={<Protected><CandidateReport /></Protected>} />
+    <Route path="/candidate/reports" element={<Protected><Navigate to="/reports" replace /></Protected>} />
+    <Route path="/reports" element={<Protected><AbilityPage /></Protected>} />
+    <Route path="/library" element={<Protected><CandidateLibrary /></Protected>} />
+    <Route path="/users" element={<Protected><CandidateProfile /></Protected>} />
+    <Route path="/interviews" element={<Navigate to="/candidate/interviews" replace />} />
+    <Route path="/" element={<Navigate to="/login" replace />} />
+    <Route path="*" element={<Protected><CandidateWorkspace /></Protected>} />
+  </Routes>
+}
