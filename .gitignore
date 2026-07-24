@@ -1,7 +1,6 @@
 # IDEA
 .idea/
 *.iml
-.vscode/
 
 # Maven
 target/
@@ -19,16 +18,18 @@ Thumbs.db
 
 # Env
 .env
-.env.local
-backend/src/main/resources/application-local.yml
-frontend/.env.local
-
-# Node
-frontend/node_modules/
-frontend/dist/
-
-# Runtime data
-.data/
 
 # Upload files
 uploads/
+
+# Next.js
+.next/
+out/
+
+# Node.js
+node_modules/
+yarn.lock
+pnpm-lock.yaml
+
+# Documents
+*.docx
