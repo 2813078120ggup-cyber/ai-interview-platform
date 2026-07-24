@@ -24,3 +24,7 @@ uploads/
 
 # Database
 *.sql
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
