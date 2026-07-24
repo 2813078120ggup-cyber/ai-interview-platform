@@ -20,10 +20,10 @@ flowchart LR
 
 ## 2. 后端模块与分层
 
-根包：`com.gc.aiinterview`。保持 Controller、Service、Mapper 清晰分层，禁止 Controller 直接访问 Mapper。
+根包：`com.tyut.aiinterview`。保持 Controller、Service、Mapper 清晰分层，禁止 Controller 直接访问 Mapper。
 
 ```text
-backend/src/main/java/com/gc/aiinterview
+backend/src/main/java/com/tyut/aiinterview
 ├── common/                  # Result、PageResult、常量、分页、请求上下文
 ├── config/                  # OpenAPI、Jackson、MyBatis Plus、Redis、MinIO、异步配置
 ├── security/                # JWT、认证过滤器、权限表达式、当前用户
