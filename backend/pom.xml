@@ -11,7 +11,7 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.gc</groupId>
+    <groupId>com.tyut</groupId>
     <artifactId>ai-interview-platform</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>ai-interview-platform</name>

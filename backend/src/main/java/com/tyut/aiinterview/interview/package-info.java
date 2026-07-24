@@ -1,2 +1,2 @@
 /** Interview creation, scheduling, and answer-submission domain. */
-package com.gc.aiinterview.interview;
+package com.tyut.aiinterview.interview;

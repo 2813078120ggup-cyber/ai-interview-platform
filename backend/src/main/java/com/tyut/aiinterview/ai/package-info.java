@@ -1,2 +1,2 @@
 /** AI provider adapters and interview-agent orchestration. */
-package com.gc.aiinterview.ai;
+package com.tyut.aiinterview.ai;

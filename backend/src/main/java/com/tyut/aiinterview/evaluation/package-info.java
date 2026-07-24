@@ -1,2 +1,2 @@
 /** Evaluation models and scoring services. */
-package com.gc.aiinterview.evaluation;
+package com.tyut.aiinterview.evaluation;

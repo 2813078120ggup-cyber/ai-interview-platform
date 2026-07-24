@@ -3,7 +3,7 @@
 ```text
 ai-interview-platform/
 ├── backend/                     # Spring Boot API
-│   └── src/main/java/com/gc/aiinterview/
+│   └── src/main/java/com/tyut/aiinterview/
 │       ├── common/               # 通用响应、异常、基础设施
 │       ├── user/                 # 用户与权限
 │       ├── question/             # 题库

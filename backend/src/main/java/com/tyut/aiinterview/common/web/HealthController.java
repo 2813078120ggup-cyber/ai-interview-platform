@@ -1,6 +1,6 @@
-package com.gc.aiinterview.common.web;
+package com.tyut.aiinterview.common.web;
 
-import com.gc.aiinterview.common.api.ApiResponse;
+import com.tyut.aiinterview.common.api.ApiResponse;
 import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

@@ -1,2 +1,2 @@
 /** Interview report generation and delivery. */
-package com.gc.aiinterview.report;
+package com.tyut.aiinterview.report;

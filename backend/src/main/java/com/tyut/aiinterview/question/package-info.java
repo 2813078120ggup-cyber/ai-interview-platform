@@ -1,2 +1,2 @@
 /** Question-bank domain and question generation boundary. */
-package com.gc.aiinterview.question;
+package com.tyut.aiinterview.question;
