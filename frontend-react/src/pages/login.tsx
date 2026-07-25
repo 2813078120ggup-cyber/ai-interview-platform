@@ -190,10 +190,17 @@ export function LoginPage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.18, duration: 0.48 }}
-              className="login-hero-title mt-5 max-w-[620px] text-[clamp(2.65rem,3.58vw,4.35rem)] font-black leading-[1.02] tracking-[-0.055em]"
+              className="login-hero-title mt-5 max-w-[620px]"
             >
-              每一次模拟面试，
-              <span className="block">都成为下一次的底气。</span>
+              <span className="block text-[clamp(2.25rem,3.05vw,3.55rem)] font-black leading-[1.02] tracking-[-0.052em]">
+                每一次模拟面试，
+              </span>
+              <span className="mt-1 block text-[clamp(2.05rem,2.78vw,3.25rem)] font-black leading-[1.04] tracking-[-0.05em]">
+                都成为下一次的
+              </span>
+              <span className="login-hero-keyword mt-1 block text-[clamp(3.45rem,5.1vw,5.75rem)] font-black leading-[0.9] tracking-[-0.07em]">
+                底气。
+              </span>
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 14 }}

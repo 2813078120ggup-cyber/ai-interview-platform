@@ -182,8 +182,20 @@ button:disabled { cursor: not-allowed; }
   font-feature-settings: "kern";
 }
 
-.login-hero-title span {
-  letter-spacing: -0.06em;
+.login-hero-keyword {
+  width: fit-content;
+  color: #151412;
+  text-shadow: 0 14px 36px rgba(20, 18, 17, .08);
+}
+
+.login-hero-keyword::after {
+  content: "";
+  display: block;
+  height: 14px;
+  margin-top: -10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 34%, transparent), transparent);
+  opacity: .42;
 }
 
 .login-particle-layer {
