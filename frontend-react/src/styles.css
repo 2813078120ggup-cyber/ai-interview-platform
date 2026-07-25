@@ -201,11 +201,54 @@ button:disabled { cursor: not-allowed; }
   min-height: 260px;
   overflow: hidden;
   border-radius: 30px;
-  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+  border: 0;
   background:
-    radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 10rem),
-    linear-gradient(145deg, rgba(255, 255, 255, .66), rgba(255, 255, 255, .26));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .75);
+    radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 10rem),
+    radial-gradient(circle at 50% 48%, rgba(255,255,255,.56), transparent 13rem);
+  box-shadow: none;
+}
+
+.login-ai-stage::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 47%;
+  width: 255px;
+  height: 255px;
+  border-radius: 999px;
+  background: conic-gradient(
+    from 0deg,
+    transparent,
+    color-mix(in srgb, var(--accent) 22%, transparent),
+    transparent 34%,
+    transparent
+  );
+  filter: blur(18px);
+  opacity: .5;
+  transform: translate(-50%, -50%);
+  animation: login-aura-spin 9s linear infinite;
+}
+
+.login-ai-stage::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 47%;
+  width: 130px;
+  height: 130px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255,255,255,.78), rgba(255,255,255,0) 68%);
+  transform: translate(-50%, -50%);
+  animation: login-aura-breathe 2.8s ease-in-out infinite;
+}
+
+@keyframes login-aura-spin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes login-aura-breathe {
+  0%, 100% { opacity: .45; transform: translate(-50%, -50%) scale(.92); }
+  50% { opacity: .86; transform: translate(-50%, -50%) scale(1.14); }
 }
 
 .login-pulse-ring {
@@ -219,8 +262,8 @@ button:disabled { cursor: not-allowed; }
 }
 
 @keyframes login-pulse-expand {
-  0% { width: 54px; height: 54px; opacity: .5; }
-  100% { width: 230px; height: 230px; opacity: 0; }
+  0% { width: 54px; height: 54px; opacity: .66; }
+  100% { width: 250px; height: 250px; opacity: 0; }
 }
 
 .login-dashed-orbit,
@@ -235,15 +278,15 @@ button:disabled { cursor: not-allowed; }
 .login-dashed-orbit {
   width: 178px;
   height: 178px;
-  border: 1.5px dashed color-mix(in srgb, var(--foreground) 16%, transparent);
-  animation: login-rotate 24s linear infinite;
+  border: 1.5px dashed color-mix(in srgb, var(--accent) 34%, transparent);
+  animation: login-rotate 16s linear infinite;
 }
 
 .login-solid-orbit {
   width: 122px;
   height: 122px;
-  border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
-  animation: login-rotate-reverse 18s linear infinite;
+  border: 1px solid color-mix(in srgb, var(--foreground) 16%, transparent);
+  animation: login-rotate-reverse 12s linear infinite;
 }
 
 @keyframes login-rotate {
@@ -270,12 +313,12 @@ button:disabled { cursor: not-allowed; }
   background: #151412;
   box-shadow: 0 0 0 9px rgba(20, 18, 17, .06);
   transform: translate(-50%, -50%);
-  animation: login-core-breathe 3s ease-in-out infinite;
+  animation: login-core-breathe 2.35s ease-in-out infinite;
 }
 
 @keyframes login-core-breathe {
-  0%, 100% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 8px rgba(20, 18, 17, .06); }
-  50% { transform: translate(-50%, -50%) scale(1.08); box-shadow: 0 0 0 17px rgba(20, 18, 17, .035); }
+  0%, 100% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 8px rgba(20, 18, 17, .08), 0 18px 42px rgba(20,18,17,.18); }
+  50% { transform: translate(-50%, -50%) scale(1.14); box-shadow: 0 0 0 20px rgba(20, 18, 17, .035), 0 24px 54px rgba(20,18,17,.24); }
 }
 
 .login-orbit-icon {
@@ -293,12 +336,13 @@ button:disabled { cursor: not-allowed; }
   background: rgba(255, 255, 255, .82);
   color: var(--accent);
   box-shadow: 0 8px 22px rgba(20, 18, 17, .07);
-  animation: login-orbit 14s linear infinite;
+  animation: login-orbit 11s linear infinite;
 }
 
 @keyframes login-orbit {
-  0% { transform: rotate(0deg) translateX(98px) rotate(0deg); }
-  100% { transform: rotate(360deg) translateX(98px) rotate(-360deg); }
+  0% { transform: rotate(0deg) translateX(102px) rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) translateX(102px) rotate(-180deg) scale(1.08); }
+  100% { transform: rotate(360deg) translateX(102px) rotate(-360deg) scale(1); }
 }
 
 .login-neural-svg {
@@ -313,10 +357,10 @@ button:disabled { cursor: not-allowed; }
 }
 
 .login-neural-line {
-  stroke: color-mix(in srgb, var(--foreground) 12%, transparent);
+  stroke: color-mix(in srgb, var(--accent) 28%, transparent);
   stroke-width: 1;
   stroke-dasharray: 3 5;
-  animation: login-neural-flow 1.55s linear infinite;
+  animation: login-neural-flow 1.05s linear infinite;
 }
 
 @keyframes login-neural-flow {
@@ -340,16 +384,34 @@ button:disabled { cursor: not-allowed; }
   height: 7px;
   border-radius: 999px;
   background: #151412;
-  opacity: .3;
-  animation: login-wave-jump 1.12s ease-in-out infinite;
+  opacity: .42;
+  animation: login-wave-jump .82s ease-in-out infinite;
 }
 
 .login-wave-bar:nth-child(2n) { animation-duration: .92s; }
 .login-wave-bar:nth-child(3n) { animation-duration: 1.24s; }
 
 @keyframes login-wave-jump {
-  0%, 100% { height: 7px; opacity: .24; }
-  50% { height: 26px; opacity: .58; }
+  0%, 100% { height: 7px; opacity: .26; }
+  50% { height: 30px; opacity: .72; }
+}
+
+.login-live-card {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  z-index: 6;
+  width: min(235px, calc(100% - 36px));
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, .78);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, .88), rgba(255, 255, 255, .62)),
+    color-mix(in srgb, var(--surface) 88%, transparent);
+  box-shadow:
+    0 18px 46px rgba(20, 18, 17, .12),
+    inset 0 1px 0 rgba(255, 255, 255, .84);
+  padding: 14px;
+  backdrop-filter: blur(16px);
 }
 
 .login-status-dot {
@@ -366,6 +428,53 @@ button:disabled { cursor: not-allowed; }
   50% { opacity: .5; transform: scale(.86); }
 }
 
+.login-primary-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.login-primary-button::before {
+  content: "";
+  position: absolute;
+  inset: -120% auto auto -32%;
+  width: 34%;
+  height: 340%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .32), transparent);
+  transform: rotate(18deg);
+  animation: login-button-sheen 3.6s ease-in-out infinite;
+}
+
+@keyframes login-button-sheen {
+  0%, 58% { transform: translateX(0) rotate(18deg); opacity: 0; }
+  68% { opacity: 1; }
+  100% { transform: translateX(460%) rotate(18deg); opacity: 0; }
+}
+
+.login-magnetic-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.login-magnetic-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background:
+    radial-gradient(circle at 24% 16%, rgba(255,255,255,.85), transparent 30%),
+    linear-gradient(145deg, rgba(155,104,71,.12), transparent 48%);
+  transition: opacity .22s ease;
+}
+
+.login-magnetic-card:hover::before {
+  opacity: 1;
+}
+
+.login-magnetic-card > * {
+  position: relative;
+  z-index: 1;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .login-particle,
   .login-pulse-ring,
@@ -375,7 +484,11 @@ button:disabled { cursor: not-allowed; }
   .login-orbit-icon,
   .login-neural-line,
   .login-wave-bar,
-  .login-status-dot {
+  .login-status-dot,
+  .login-primary-button::before,
+  .login-magnetic-card::before,
+  .login-ai-stage::before,
+  .login-ai-stage::after {
     animation: none !important;
   }
 }

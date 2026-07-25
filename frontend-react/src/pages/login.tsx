@@ -10,6 +10,7 @@ import {
   ArrowRight,
   BarChart3,
   Bot,
+  CheckCircle2,
   Eye,
   EyeOff,
   FileText,
@@ -19,6 +20,7 @@ import {
   RotateCcw,
   ShieldCheck,
   Sparkles,
+  Timer,
   UserRound,
   Video,
   Waves,
@@ -39,9 +41,9 @@ const fieldClass =
   'mt-2 h-12 w-full rounded-[18px] border border-border bg-surface/72 px-4 text-sm outline-none transition duration-200 placeholder:text-muted-foreground/55 hover:border-[color-mix(in_srgb,var(--accent)_36%,var(--border))] focus:border-[var(--primary)] focus:bg-surface focus:shadow-[0_0_0_5px_color-mix(in_srgb,var(--accent)_12%,transparent)]'
 
 const features = [
-  { title: 'AI 追问', desc: '像真实面试一样层层推进', icon: Mic },
-  { title: '能力报告', desc: '四维画像、趋势和建议', icon: BarChart3 },
-  { title: '中断恢复', desc: '草稿自动保存，流程不断档', icon: RotateCcw },
+  { title: '智能追问', desc: '根据回答继续提问，还原真实面试节奏', icon: Mic },
+  { title: '评测报告', desc: '自动评分、四维画像和改进建议', icon: BarChart3 },
+  { title: '断点续练', desc: '草稿自动保存，刷新后继续作答', icon: RotateCcw },
 ]
 
 const particles = [
@@ -68,8 +70,12 @@ export function LoginPage() {
 
   const pointerX = useMotionValue(50)
   const pointerY = useMotionValue(50)
+  const cursorX = useMotionValue(0)
+  const cursorY = useMotionValue(0)
   const smoothX = useSpring(pointerX, { stiffness: 90, damping: 22, mass: 0.3 })
   const smoothY = useSpring(pointerY, { stiffness: 90, damping: 22, mass: 0.3 })
+  const cursorSmoothX = useSpring(cursorX, { stiffness: 180, damping: 24, mass: 0.22 })
+  const cursorSmoothY = useSpring(cursorY, { stiffness: 180, damping: 24, mass: 0.22 })
   const tiltX = useTransform(smoothY, [0, 100], [5, -5])
   const tiltY = useTransform(smoothX, [0, 100], [-5, 5])
 
@@ -80,6 +86,8 @@ export function LoginPage() {
     const rect = event.currentTarget.getBoundingClientRect()
     pointerX.set(((event.clientX - rect.left) / rect.width) * 100)
     pointerY.set(((event.clientY - rect.top) / rect.height) * 100)
+    cursorX.set(event.clientX)
+    cursorY.set(event.clientY)
   }
 
   async function submit(event: FormEvent) {
@@ -106,11 +114,6 @@ export function LoginPage() {
     }
   }
 
-  function switchMode() {
-    setMode(mode === 'login' ? 'register' : 'login')
-    setError('')
-  }
-
   return (
     <main
       onMouseMove={updatePointer}
@@ -123,6 +126,20 @@ export function LoginPage() {
         animate={reduceMotion ? undefined : { opacity: [0.62, 0.9, 0.62] }}
         transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
       />
+      {!reduceMotion && (
+        <>
+          <motion.div
+            aria-hidden
+            className="pointer-events-none fixed left-0 top-0 z-50 hidden h-24 w-24 rounded-full border border-[color-mix(in_srgb,var(--accent)_24%,transparent)] bg-[color-mix(in_srgb,var(--accent)_10%,transparent)] blur-[1px] lg:block"
+            style={{ x: cursorSmoothX, y: cursorSmoothY, translateX: '-50%', translateY: '-50%' }}
+          />
+          <motion.div
+            aria-hidden
+            className="pointer-events-none fixed left-0 top-0 z-50 hidden h-3 w-3 rounded-full bg-[var(--accent)] shadow-[0_0_28px_color-mix(in_srgb,var(--accent)_60%,transparent)] lg:block"
+            style={{ x: cursorX, y: cursorY, translateX: '-50%', translateY: '-50%' }}
+          />
+        </>
+      )}
       <div className="pointer-events-none absolute left-[4%] top-[5%] h-72 w-72 rounded-full bg-[var(--brand)]/12 blur-3xl" />
       <div className="pointer-events-none absolute bottom-[8%] right-[10%] h-80 w-80 rounded-full bg-[var(--brand-pink)]/10 blur-3xl" />
 
@@ -174,9 +191,10 @@ export function LoginPage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.18, duration: 0.48 }}
-              className="mt-5 text-[clamp(2.55rem,4.8vw,4.7rem)] font-black leading-[0.98] tracking-[-0.055em]"
+              className="mt-5 max-w-[520px] text-[clamp(2.35rem,4vw,4.15rem)] font-black leading-[1.03] tracking-[-0.045em]"
             >
-              把每一次模拟面试，变成下一次的底气。
+              把每一次模拟面试，
+              <span className="block">变成下一次的底气。</span>
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 14 }}
@@ -214,6 +232,26 @@ export function LoginPage() {
                   <span key={index} className="login-wave-bar" style={{ animationDelay: `${index * 0.08}s` }} />
                 ))}
               </div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 18, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ delay: 0.5, duration: 0.45 }}
+                className="login-live-card"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f4eee6] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--accent)]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
+                    Live
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                    <Timer className="h-3.5 w-3.5" />
+                    28:32
+                  </span>
+                </div>
+                <p className="mt-3 text-sm font-bold">AI 面试官</p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">请结合项目经历，说明一次你如何定位并解决性能问题。</p>
+              </motion.div>
             </div>
 
             <div className="grid content-end gap-3">
@@ -223,8 +261,9 @@ export function LoginPage() {
                   initial={{ opacity: 0, x: 16 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.36 + index * 0.08, duration: 0.38 }}
-                  whileHover={reduceMotion ? undefined : { y: -4, scale: 1.015 }}
-                  className="rounded-3xl border border-[#ded8ce] bg-white/72 p-4 shadow-[0_10px_34px_rgba(20,18,17,.05)] backdrop-blur"
+                  whileHover={reduceMotion ? undefined : { y: -8, scale: 1.025, rotate: index === 1 ? 0.7 : -0.7 }}
+                  whileTap={reduceMotion ? undefined : { scale: 0.985 }}
+                  className="login-magnetic-card rounded-3xl border border-[#ded8ce] bg-white/72 p-4 shadow-[0_10px_34px_rgba(20,18,17,.05)] backdrop-blur"
                 >
                   <span className="grid h-9 w-9 place-items-center rounded-2xl bg-[#f0ece5] text-[var(--accent)]">
                     <Icon className="h-4 w-4" />
@@ -292,6 +331,31 @@ export function LoginPage() {
                     ? '登录后会根据你的角色进入对应工作空间。'
                     : '新注册账号默认进入候选人端，可用于模拟练习和查看报告。'}
                 </p>
+              </div>
+
+              <div className="mt-6 grid grid-cols-2 rounded-full border border-border bg-[#f4f0e9] p-1 text-sm font-bold">
+                {(['login', 'register'] as const).map(item => (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => {
+                      setMode(item)
+                      setError('')
+                    }}
+                    className={`relative rounded-full px-4 py-2.5 transition ${
+                      mode === item ? 'text-white shadow-[0_12px_28px_rgba(20,18,17,.13)]' : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {mode === item && (
+                      <motion.span
+                        layoutId="login-mode-pill"
+                        className="absolute inset-0 rounded-full bg-[#151412]"
+                        transition={{ type: 'spring', stiffness: 360, damping: 32 }}
+                      />
+                    )}
+                    <span className="relative">{item === 'login' ? '账号登录' : '候选人注册'}</span>
+                  </button>
+                ))}
               </div>
 
               {error && (
@@ -379,22 +443,27 @@ export function LoginPage() {
                 )}
               </div>
 
-              <Button className="group mt-7 h-12 w-full rounded-[18px] bg-[#151412] text-white shadow-[0_16px_38px_rgba(20,18,17,.16)] transition hover:-translate-y-0.5 hover:bg-[#24211d]" disabled={busy}>
+              <Button className="login-primary-button group mt-7 h-12 w-full rounded-[18px] bg-[#151412] text-white shadow-[0_16px_38px_rgba(20,18,17,.16)] transition hover:-translate-y-0.5 hover:bg-[#24211d]" disabled={busy}>
                 {busy ? '处理中…' : mode === 'login' ? '登录工作空间' : '创建账号'}
                 {busy ? <Waves className="h-4 w-4 animate-pulse" /> : <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />}
               </Button>
 
-              <button
-                type="button"
-                onClick={switchMode}
-                className="mt-5 w-full rounded-2xl px-4 py-3 text-sm font-bold text-[var(--accent)] transition hover:bg-[var(--accent-soft)]"
-              >
-                {mode === 'login' ? '没有账号？创建候选人账号' : '已有账号？去登录'}
-              </button>
+              <p className="mt-5 text-center text-xs leading-5 text-muted-foreground">
+                管理员账号由后台初始化；候选人可直接注册并进入练习空间。
+              </p>
 
               <div className="mt-6 flex items-start gap-3 rounded-2xl border border-border bg-[#f3efe8] px-4 py-3 text-xs leading-5 text-muted-foreground">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[var(--accent)]" />
                 <span>密码通过后端 Spring Security BCrypt 校验，登录成功后自动分流到管理端或候选人端。</span>
+              </div>
+
+              <div className="mt-4 grid grid-cols-3 gap-2 text-[11px] font-semibold text-muted-foreground">
+                {['DeepSeek 在线', '语音作答', '报告生成'].map(text => (
+                  <span key={text} className="inline-flex items-center justify-center gap-1 rounded-full border border-border bg-white/60 px-2 py-2">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-[var(--accent)]" />
+                    {text}
+                  </span>
+                ))}
               </div>
             </div>
           </motion.form>
