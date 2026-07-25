@@ -362,19 +362,38 @@ export function AdminQuestionBanks() {
             <h3 className="mt-1 text-xl font-bold">{item.name}</h3>
             <p className="mt-3 line-clamp-2 min-h-10 text-sm leading-6 text-muted-foreground">{item.description || '暂未添加题库说明'}</p>
 
-            <div className="mt-5 rounded-[20px] border border-border bg-background/55 p-3">
+            <div className="mt-5 rounded-[22px] border border-[color-mix(in_srgb,var(--accent)_14%,var(--border))] bg-[linear-gradient(145deg,color-mix(in_srgb,var(--accent-soft)_42%,transparent),color-mix(in_srgb,var(--surface)_82%,transparent))] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,.62)]">
               <div className="mb-2 flex items-center justify-between">
                 <span className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground"><VisibilityIcon className="h-3.5 w-3.5" />可见范围</span>
                 <span className="text-xs text-muted-foreground">{visibilityHint(item.visibility)}</span>
               </div>
-              <select
-                value={item.visibility}
-                disabled={updating}
-                onChange={event => void updateBank(item, { visibility: Number(event.target.value) })}
-                className="h-10 w-full rounded-2xl border border-border bg-surface px-3 text-sm font-semibold outline-none transition focus:border-[var(--accent)]"
-              >
-                {visibilityOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
-              </select>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {visibilityOptions.map(option => {
+                  const OptionIcon = option.icon
+                  const selected = option.value === item.visibility
+                  return <button
+                    key={option.value}
+                    type="button"
+                    disabled={updating || selected}
+                    onClick={() => void updateBank(item, { visibility: option.value })}
+                    className={[
+                      'group flex min-h-16 flex-col items-start justify-between rounded-[18px] border px-3 py-2.5 text-left transition duration-200',
+                      selected
+                        ? 'border-[var(--accent)] bg-surface text-foreground shadow-[0_12px_28px_color-mix(in_srgb,var(--accent)_13%,transparent)]'
+                        : 'border-border/80 bg-surface/45 text-muted-foreground hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--accent)_36%,var(--border))] hover:bg-surface/80 hover:text-foreground',
+                      updating ? 'opacity-60' : '',
+                    ].join(' ')}
+                    aria-pressed={selected}
+                    title={option.hint}
+                  >
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold">
+                      <OptionIcon className="h-3.5 w-3.5" />
+                      {option.label}
+                    </span>
+                    <span className="text-[10px] leading-4 text-muted-foreground">{option.hint}</span>
+                  </button>
+                })}
+              </div>
             </div>
 
             <div className="mt-auto flex items-center justify-between border-t border-border pt-4">
