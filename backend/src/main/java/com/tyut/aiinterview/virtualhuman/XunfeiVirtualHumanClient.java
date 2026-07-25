@@ -4,6 +4,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tyut.aiinterview.settings.AiProviderService;
 import jakarta.annotation.PreDestroy;
+import org.springframework.stereotype.Component;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -25,9 +29,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import org.springframework.stereotype.Component;
 
 @Component
 public class XunfeiVirtualHumanClient {
@@ -51,6 +52,10 @@ public class XunfeiVirtualHumanClient {
     }
 
     public SessionResult start(AiProviderService.RuntimeProvider provider) throws Exception {
+        return start(provider, normalizedAvatarId(provider.avatarModel()));
+    }
+
+    public SessionResult start(AiProviderService.RuntimeProvider provider, String avatarId) throws Exception {
         URI uri = authorizedUri(endpoint(provider.baseUrl()), provider.apiKey(), provider.apiSecret());
         AvatarWebSocketListener listener = new AvatarWebSocketListener();
         WebSocket webSocket = httpClient.newWebSocketBuilder()
@@ -58,17 +63,22 @@ public class XunfeiVirtualHumanClient {
                 .buildAsync(uri, listener)
                 .get(18, TimeUnit.SECONDS);
 
-        listener.attach(webSocket);
-        webSocket.sendText(objectMapper.writeValueAsString(startPayload(provider)), true).join();
-        SessionResult result = listener.startFuture.get(25, TimeUnit.SECONDS);
-        ScheduledFuture<?> pingTask = scheduler.scheduleAtFixedRate(
-                () -> sendPing(provider, webSocket),
-                5,
-                5,
-                TimeUnit.SECONDS
-        );
-        sessions.put(result.sessionId(), new LiveSession(provider.appId(), provider.serviceId(), webSocket, pingTask));
-        return result;
+        try {
+            listener.attach(webSocket);
+            webSocket.sendText(objectMapper.writeValueAsString(startPayload(provider, avatarId)), true).join();
+            SessionResult result = listener.startFuture.get(25, TimeUnit.SECONDS);
+            ScheduledFuture<?> pingTask = scheduler.scheduleAtFixedRate(
+                    () -> sendPing(provider, webSocket),
+                    5,
+                    5,
+                    TimeUnit.SECONDS
+            );
+            sessions.put(result.sessionId(), new LiveSession(provider.appId(), provider.serviceId(), webSocket, pingTask));
+            return result;
+        } catch (Exception exception) {
+            closeQuietly(webSocket, "start failed");
+            throw exception;
+        }
     }
 
     public JsonNode control(AiProviderService.RuntimeProvider provider, String sessionId, String text) throws Exception {
@@ -92,7 +102,7 @@ public class XunfeiVirtualHumanClient {
             session.webSocket().sendText(objectMapper.writeValueAsString(stopPayload(session.appId(), session.sceneId())), true).join();
         } catch (Exception ignored) {
         } finally {
-            session.webSocket().sendClose(WebSocket.NORMAL_CLOSURE, "bye");
+            closeQuietly(session.webSocket(), "bye");
         }
     }
 
@@ -102,7 +112,7 @@ public class XunfeiVirtualHumanClient {
         scheduler.shutdownNow();
     }
 
-    private Map<String, Object> startPayload(AiProviderService.RuntimeProvider provider) {
+    private Map<String, Object> startPayload(AiProviderService.RuntimeProvider provider, String avatarId) {
         Map<String, Object> stream = new LinkedHashMap<>();
         stream.put("protocol", "flv");
         stream.put("fps", 25);
@@ -110,7 +120,7 @@ public class XunfeiVirtualHumanClient {
 
         Map<String, Object> avatar = new LinkedHashMap<>();
         avatar.put("stream", stream);
-        avatar.put("avatar_id", normalizedAvatarId(provider.avatarModel()));
+        avatar.put("avatar_id", avatarId);
         avatar.put("width", WIDTH);
         avatar.put("height", HEIGHT);
 
@@ -200,6 +210,27 @@ public class XunfeiVirtualHumanClient {
         return firstText(node, "message", "desc", "msg").orElse(node.toString());
     }
 
+    private String diagnosticMessage(int code, JsonNode node) {
+        String message = responseMessage(node);
+        String sid = firstText(node, "sid").orElse("");
+        String sidPart = sid.isBlank() ? "" : "，sid=" + sid;
+        if (code == 11203) {
+            return code + " / " + message + sidPart +
+                    "。讯飞返回该错误通常表示在线虚拟人驱动并发路数已占用、授权路数不足或订阅已过期。" +
+                    "请在讯飞交互平台-交互日志中终止“持续中”的链路，并确认 AppID 未过期、在线虚拟人驱动路数和剩余交互时长充足。" +
+                    "系统已自动关闭本次失败连接，正常离开面试间时也会调用 stop 释放会话。";
+        }
+        if (code == 11200) {
+            return code + " / " + message + sidPart +
+                    "。请检查虚拟人形象 ID、发音人/音色和剩余交互时长是否已在当前接口服务下授权。";
+        }
+        if (code == 10163) {
+            return code + " / " + message + sidPart +
+                    "。请检查 move_h / move_v 等形象移动参数是否超出 [-4096, 4096] 范围。";
+        }
+        return code + " / " + message + sidPart;
+    }
+
     private String normalizedAvatarId(String avatarModel) {
         String value = avatarModel == null ? "" : avatarModel.trim();
         if (value.isBlank()) return DEFAULT_AVATAR_ID;
@@ -234,6 +265,13 @@ public class XunfeiVirtualHumanClient {
         return Optional.empty();
     }
 
+    private void closeQuietly(WebSocket webSocket, String reason) {
+        try {
+            webSocket.sendClose(WebSocket.NORMAL_CLOSURE, reason).join();
+        } catch (Exception ignored) {
+        }
+    }
+
     private final class AvatarWebSocketListener implements WebSocket.Listener {
         private final StringBuilder buffer = new StringBuilder();
         private final CompletableFuture<SessionResult> startFuture = new CompletableFuture<>();
@@ -254,8 +292,9 @@ public class XunfeiVirtualHumanClient {
                 JsonNode node = objectMapper.readTree(raw);
                 int code = responseCode(node);
                 if (code != 0) {
-                    startFuture.completeExceptionally(new IllegalStateException("讯飞虚拟人接口返回异常："
-                            + code + " / " + responseMessage(node)));
+                    System.out.println("XF RESPONSE = " + node.toPrettyString());
+                    startFuture.completeExceptionally(new IllegalStateException("讯飞虚拟人接口返回异常：" + diagnosticMessage(code, node)));
+                    closeQuietly(webSocket, "xunfei error " + code);
                     return WebSocket.Listener.super.onText(webSocket, data, true);
                 }
                 sessionId = firstText(node, "session").orElse(sessionId);
@@ -269,6 +308,7 @@ public class XunfeiVirtualHumanClient {
                 }
             } catch (Exception exception) {
                 startFuture.completeExceptionally(exception);
+                closeQuietly(webSocket, "parse failed");
             }
             return WebSocket.Listener.super.onText(webSocket, data, true);
         }
