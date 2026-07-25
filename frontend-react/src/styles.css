@@ -126,6 +126,36 @@ button:disabled { cursor: not-allowed; }
   z-index: 1;
 }
 
+.global-mouse-halo {
+  width: 4.75rem;
+  height: 4.75rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--accent) 11%, transparent) 0 32%, transparent 66%),
+    color-mix(in srgb, var(--surface) 18%, transparent);
+  box-shadow:
+    0 14px 42px color-mix(in srgb, var(--accent) 10%, transparent),
+    inset 0 0 22px color-mix(in srgb, #fff 38%, transparent);
+  mix-blend-mode: multiply;
+  transition: opacity .2s ease;
+}
+
+.global-mouse-dot {
+  width: .72rem;
+  height: .72rem;
+  background: var(--accent);
+  box-shadow: 0 0 28px color-mix(in srgb, var(--accent) 54%, transparent);
+  transition: opacity .12s ease;
+}
+
+.dark .global-mouse-halo {
+  border-color: color-mix(in srgb, var(--brand-pink) 24%, transparent);
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--brand-pink) 12%, transparent) 0 32%, transparent 66%),
+    color-mix(in srgb, var(--surface) 10%, transparent);
+  mix-blend-mode: screen;
+}
+
 .soft-emphasis-panel.text-white,
 .soft-emphasis-panel .text-white {
   color: var(--foreground) !important;

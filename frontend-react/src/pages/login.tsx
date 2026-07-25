@@ -69,12 +69,8 @@ export function LoginPage() {
 
   const pointerX = useMotionValue(50)
   const pointerY = useMotionValue(50)
-  const cursorX = useMotionValue(0)
-  const cursorY = useMotionValue(0)
   const smoothX = useSpring(pointerX, { stiffness: 90, damping: 22, mass: 0.3 })
   const smoothY = useSpring(pointerY, { stiffness: 90, damping: 22, mass: 0.3 })
-  const cursorSmoothX = useSpring(cursorX, { stiffness: 180, damping: 24, mass: 0.22 })
-  const cursorSmoothY = useSpring(cursorY, { stiffness: 180, damping: 24, mass: 0.22 })
   const tiltX = useTransform(smoothY, [0, 100], [5, -5])
   const tiltY = useTransform(smoothX, [0, 100], [-5, 5])
 
@@ -85,8 +81,6 @@ export function LoginPage() {
     const rect = event.currentTarget.getBoundingClientRect()
     pointerX.set(((event.clientX - rect.left) / rect.width) * 100)
     pointerY.set(((event.clientY - rect.top) / rect.height) * 100)
-    cursorX.set(event.clientX)
-    cursorY.set(event.clientY)
   }
 
   async function submit(event: FormEvent) {
@@ -125,20 +119,6 @@ export function LoginPage() {
         animate={reduceMotion ? undefined : { opacity: [0.62, 0.9, 0.62] }}
         transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
       />
-      {!reduceMotion && (
-        <>
-          <motion.div
-            aria-hidden
-            className="pointer-events-none fixed left-0 top-0 z-50 hidden h-24 w-24 rounded-full border border-[color-mix(in_srgb,var(--accent)_24%,transparent)] bg-[color-mix(in_srgb,var(--accent)_10%,transparent)] blur-[1px] lg:block"
-            style={{ x: cursorSmoothX, y: cursorSmoothY, translateX: '-50%', translateY: '-50%' }}
-          />
-          <motion.div
-            aria-hidden
-            className="pointer-events-none fixed left-0 top-0 z-50 hidden h-3 w-3 rounded-full bg-[var(--accent)] shadow-[0_0_28px_color-mix(in_srgb,var(--accent)_60%,transparent)] lg:block"
-            style={{ x: cursorX, y: cursorY, translateX: '-50%', translateY: '-50%' }}
-          />
-        </>
-      )}
       <div className="pointer-events-none absolute left-[4%] top-[5%] h-72 w-72 rounded-full bg-[var(--brand)]/12 blur-3xl" />
       <div className="pointer-events-none absolute bottom-[8%] right-[10%] h-80 w-80 rounded-full bg-[var(--brand-pink)]/10 blur-3xl" />
 

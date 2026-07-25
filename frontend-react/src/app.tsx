@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card'
 import { AiAssistant } from '@/components/ai-assistant'
 import { AdminPageShell } from '@/components/admin-page-shell'
 import { CandidatePageShell } from '@/components/candidate-page-shell'
+import { GlobalMouseFollower } from '@/components/global-mouse-follower'
 import { PageTransition } from '@/components/page-transition'
 import { type Interview, type PracticeBank, request } from '@/lib/api'
 import { profile } from '@/lib/session'
@@ -215,28 +216,31 @@ function AbilityPage() {
 }
 
 export function App() {
-  return <Routes>
-    <Route path="/login" element={<PageTransition><LoginPage /></PageTransition>} />
-    <Route path="/admin/workspace" element={<Protected admin><AdminPageShell><AdminWorkspace /></AdminPageShell></Protected>} />
-    <Route path="/admin/interviews" element={<Protected admin><AdminPageShell><AdminInterviews /></AdminPageShell></Protected>} />
-    <Route path="/admin/interviews/:id/review" element={<Protected admin><AdminPageShell><AdminInterviewReview /></AdminPageShell></Protected>} />
-    <Route path="/admin/interviews/:id/room" element={<Protected admin><AdminPageShell><AdminInterviewReview /></AdminPageShell></Protected>} />
-    <Route path="/admin/reports" element={<Protected admin><AdminPageShell><AdminReports /></AdminPageShell></Protected>} />
-    <Route path="/admin/question-banks" element={<Protected admin><AdminPageShell><AdminQuestionBanks /></AdminPageShell></Protected>} />
-    <Route path="/admin/question-banks/:id" element={<Protected admin><AdminPageShell><AdminQuestions /></AdminPageShell></Protected>} />
-    <Route path="/admin/candidates" element={<Protected admin><AdminPageShell><AdminCandidates /></AdminPageShell></Protected>} />
-    <Route path="/admin/candidates/:id" element={<Protected admin><AdminPageShell><AdminCandidateDetail /></AdminPageShell></Protected>} />
-    <Route path="/admin/settings" element={<Protected admin><AdminPageShell><AdminSettings /></AdminPageShell></Protected>} />
-    <Route path="/admin/audit-logs" element={<Protected admin><AdminPageShell><AdminAuditLog /></AdminPageShell></Protected>} />
-    <Route path="/admin" element={<Protected admin><Navigate to="/admin/workspace" replace /></Protected>} />
-    <Route path="/candidate/interviews/:id/room" element={<Protected><PageTransition><InterviewRoom /></PageTransition></Protected>} />
-    <Route path="/candidate/interviews/:id/report" element={<Protected><PageTransition><CandidateReport /></PageTransition></Protected>} />
-    <Route path="/candidate/reports" element={<Protected><Navigate to="/reports" replace /></Protected>} />
-    <Route path="/reports" element={<Protected><AbilityPage /></Protected>} />
-    <Route path="/library" element={<Protected><CandidateLibrary /></Protected>} />
-    <Route path="/users" element={<Protected><CandidateProfile /></Protected>} />
-    <Route path="/interviews" element={<Navigate to="/candidate/interviews" replace />} />
-    <Route path="/" element={<Navigate to="/login" replace />} />
-    <Route path="*" element={<Protected><CandidateWorkspace /></Protected>} />
-  </Routes>
+  return <>
+    <GlobalMouseFollower />
+    <Routes>
+      <Route path="/login" element={<PageTransition><LoginPage /></PageTransition>} />
+      <Route path="/admin/workspace" element={<Protected admin><AdminPageShell><AdminWorkspace /></AdminPageShell></Protected>} />
+      <Route path="/admin/interviews" element={<Protected admin><AdminPageShell><AdminInterviews /></AdminPageShell></Protected>} />
+      <Route path="/admin/interviews/:id/review" element={<Protected admin><AdminPageShell><AdminInterviewReview /></AdminPageShell></Protected>} />
+      <Route path="/admin/interviews/:id/room" element={<Protected admin><AdminPageShell><AdminInterviewReview /></AdminPageShell></Protected>} />
+      <Route path="/admin/reports" element={<Protected admin><AdminPageShell><AdminReports /></AdminPageShell></Protected>} />
+      <Route path="/admin/question-banks" element={<Protected admin><AdminPageShell><AdminQuestionBanks /></AdminPageShell></Protected>} />
+      <Route path="/admin/question-banks/:id" element={<Protected admin><AdminPageShell><AdminQuestions /></AdminPageShell></Protected>} />
+      <Route path="/admin/candidates" element={<Protected admin><AdminPageShell><AdminCandidates /></AdminPageShell></Protected>} />
+      <Route path="/admin/candidates/:id" element={<Protected admin><AdminPageShell><AdminCandidateDetail /></AdminPageShell></Protected>} />
+      <Route path="/admin/settings" element={<Protected admin><AdminPageShell><AdminSettings /></AdminPageShell></Protected>} />
+      <Route path="/admin/audit-logs" element={<Protected admin><AdminPageShell><AdminAuditLog /></AdminPageShell></Protected>} />
+      <Route path="/admin" element={<Protected admin><Navigate to="/admin/workspace" replace /></Protected>} />
+      <Route path="/candidate/interviews/:id/room" element={<Protected><PageTransition><InterviewRoom /></PageTransition></Protected>} />
+      <Route path="/candidate/interviews/:id/report" element={<Protected><PageTransition><CandidateReport /></PageTransition></Protected>} />
+      <Route path="/candidate/reports" element={<Protected><Navigate to="/reports" replace /></Protected>} />
+      <Route path="/reports" element={<Protected><AbilityPage /></Protected>} />
+      <Route path="/library" element={<Protected><CandidateLibrary /></Protected>} />
+      <Route path="/users" element={<Protected><CandidateProfile /></Protected>} />
+      <Route path="/interviews" element={<Navigate to="/candidate/interviews" replace />} />
+      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<Protected><CandidateWorkspace /></Protected>} />
+    </Routes>
+  </>
 }
