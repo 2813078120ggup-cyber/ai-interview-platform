@@ -12,6 +12,9 @@ public class Interview {
     public static final int COMPLETED = 2;
     public static final int CANCELLED = 3;
     public static final int PASSED = 4;
+    public static final int REPORT_GENERATING = 5;
+    public static final int REPORT_READY = 6;
+    public static final int FAILED = 7;
     private Long id;
     private Long positionId;
     private String title;

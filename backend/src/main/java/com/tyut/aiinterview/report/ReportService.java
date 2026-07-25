@@ -39,7 +39,12 @@ public class ReportService {
     public Report generate(Long interviewId) {
         requireHr(); Interview interview = interviewMapper.selectById(interviewId);
         if (interview == null) throw BusinessException.notFound("面试不存在");
-        if (interview.getStatus() != Interview.COMPLETED) throw BusinessException.badRequest("仅已结束面试可生成报告");
+        if (interview.getStatus() != Interview.COMPLETED
+                && interview.getStatus() != Interview.REPORT_GENERATING
+                && interview.getStatus() != Interview.REPORT_READY
+                && interview.getStatus() != Interview.FAILED) {
+            throw BusinessException.badRequest("仅已结束或报告生成中的面试可生成报告");
+        }
         List<Long> questionIds = questionMapper.selectList(new LambdaQueryWrapper<InterviewQuestion>().eq(InterviewQuestion::getInterviewId, interviewId)).stream().map(InterviewQuestion::getId).toList();
         List<Evaluation> evaluations = questionIds.isEmpty() ? List.of() : evaluationMapper.selectList(new LambdaQueryWrapper<Evaluation>().in(Evaluation::getInterviewQuestionId, questionIds));
         if (evaluations.isEmpty()) throw BusinessException.badRequest("暂无评测数据，无法生成报告");
@@ -52,6 +57,10 @@ public class ReportService {
         report.setImprovementSuggestions("建议围绕得分较低的能力维度进行针对性训练。"); report.setGenerationMethod("manual"); report.setGeneratedBy(currentUser.id());
         report.setStatus(0); report.setPublishedAt(null);
         if (report.getId() == null) reportMapper.insert(report); else reportMapper.updateById(report);
+        if (interview.getStatus() == Interview.COMPLETED || interview.getStatus() == Interview.REPORT_GENERATING || interview.getStatus() == Interview.FAILED) {
+            interview.setStatus(Interview.REPORT_READY);
+            interviewMapper.updateById(interview);
+        }
         return report;
     }
     public Report get(Long interviewId) {

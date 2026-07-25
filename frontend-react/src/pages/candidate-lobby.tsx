@@ -6,14 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { type Interview, type PracticeBank, request } from '@/lib/api'
-
-const labels: Record<number, string> = {
-  0: '待开始',
-  1: '进行中',
-  2: '已结束',
-  3: '已取消',
-  4: '已通过',
-}
+import { canEnterInterview, canViewReport, interviewStatusText, interviewStatusTone, isReportPending } from '@/lib/interview-status'
 
 export function CandidateLobby() {
   const [items, setItems] = useState<Interview[]>([])
@@ -93,6 +86,9 @@ export function CandidateLobby() {
           <option value="1">进行中</option>
           <option value="2">已结束</option>
           <option value="4">已通过</option>
+          <option value="5">报告生成中</option>
+          <option value="6">已出报告</option>
+          <option value="7">未通过</option>
         </select>
       </div>
 
@@ -108,7 +104,7 @@ export function CandidateLobby() {
         >
           <div className="flex justify-between">
             <span className="text-sm text-muted-foreground">{item.remark === 'candidate-practice' ? '个人模拟练习' : 'AI 模拟面试'}</span>
-            <Badge tone={item.status === 1 ? 'success' : item.status === 0 ? 'info' : 'default'}>{labels[item.status]}</Badge>
+            <Badge tone={interviewStatusTone(item.status)}>{interviewStatusText[item.status] ?? '未知状态'}</Badge>
           </div>
           <h2 className="mt-5 text-lg font-bold">{item.title}</h2>
           <p className="mt-3 flex gap-2 text-sm text-muted-foreground">
@@ -117,9 +113,11 @@ export function CandidateLobby() {
           </p>
           <div className="mt-6 flex justify-between">
             <span className="text-xs text-muted-foreground">#{item.id}</span>
-            {item.status === 2 || item.status === 4
+            {canViewReport(item.status)
               ? <Button variant="secondary" onClick={() => nav(`/candidate/interviews/${item.id}/report`)}>查看报告</Button>
-              : <Button disabled={item.status === 3} onClick={() => enter(item)}><Play className="h-4 w-4" />{item.status === 1 ? '继续面试' : '开始面试'}</Button>}
+              : isReportPending(item.status)
+                ? <Button variant="secondary" disabled>报告生成中</Button>
+                : <Button disabled={!canEnterInterview(item.status)} onClick={() => enter(item)}><Play className="h-4 w-4" />{item.status === 1 ? '继续面试' : '开始面试'}</Button>}
           </div>
         </motion.article>)}
       </div>

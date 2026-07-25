@@ -147,7 +147,7 @@ public class InterviewService {
         long pageSize = query.pageSize() == null ? 20 : Math.min(100, Math.max(1, query.pageSize()));
         LambdaQueryWrapper<Interview> wrapper = new LambdaQueryWrapper<Interview>().orderByDesc(Interview::getScheduledAt);
         if (query.status() != null) {
-            if (query.status() < Interview.PENDING || query.status() > Interview.PASSED) throw BusinessException.badRequest("面试状态不合法");
+            if (query.status() < Interview.PENDING || query.status() > Interview.FAILED) throw BusinessException.badRequest("面试状态不合法");
             wrapper.eq(Interview::getStatus, query.status());
         }
         if (query.positionId() != null) wrapper.eq(Interview::getPositionId, query.positionId());
@@ -207,6 +207,9 @@ public class InterviewService {
         if (interview.getStatus() == Interview.PASSED) {
             return interview;
         }
+        if (interview.getStatus() == Interview.PENDING || interview.getStatus() == Interview.IN_PROGRESS || interview.getStatus() == Interview.REPORT_GENERATING) {
+            throw BusinessException.badRequest("仅已结束或已出报告的面试可标记通过");
+        }
         interview.setStatus(Interview.PASSED);
         if (interview.getEndedAt() == null) {
             interview.setEndedAt(LocalDateTime.now());
@@ -249,7 +252,7 @@ public class InterviewService {
         Interview interview = requireInterview(id);
         if (!(currentUser.id().equals(interview.getCandidateId()) || isManager())) throw BusinessException.forbidden("仅候选人或管理员可结束 AI 面试");
         requireStatus(interview, Interview.IN_PROGRESS, "当前状态不允许结束");
-        interview.setStatus(Interview.COMPLETED);
+        interview.setStatus(Interview.REPORT_GENERATING);
         interview.setEndedAt(LocalDateTime.now());
         if (interviewMapper.update(interview, new LambdaQueryWrapper<Interview>().eq(Interview::getId, id)
                 .eq(Interview::getStatus, Interview.IN_PROGRESS)) == 0) {

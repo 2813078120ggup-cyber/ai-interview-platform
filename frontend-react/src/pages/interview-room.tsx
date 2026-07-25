@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { request, type Interview } from '@/lib/api'
+import { isInterviewFinished } from '@/lib/interview-status'
 
 type Question = { interviewQuestionId: string; content: string; options?: string; questionType: string; maxScore: number }
 type Answer = { interviewQuestionId: string; answerContent?: string; answerData?: string }
@@ -75,7 +76,7 @@ export function InterviewRoom() {
   const speechToken = useRef(0)
 
   const question = questions[active]
-  const finished = interview?.status === 2 || interview?.status === 4
+  const finished = isInterviewFinished(interview?.status)
   const choiceQuestion = choiceTypes.includes(question?.questionType ?? '')
   const options = useMemo(() => safeJson<Array<{ key: string; text: string }>>(question?.options, []), [question?.options])
   const followUps = messages.filter(item => item.role === 'assistant').length

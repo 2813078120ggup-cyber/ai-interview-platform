@@ -90,10 +90,10 @@ public class AiTaskService {
         return enqueue(interviewId, null, OPENING, "opening:" + interviewId, json("question", question));
     }
 
-    /** Called only after the interview status has been atomically changed to completed. */
+    /** Called only after the interview status has been atomically changed to report-generating. */
     @Transactional
     public AiTask enqueueAutomaticEvaluation(Interview interview) {
-        if (interview.getStatus() != Interview.COMPLETED) {
+        if (interview.getStatus() != Interview.REPORT_GENERATING) {
             throw new IllegalArgumentException("仅已结束面试可创建自动评分任务");
         }
         return enqueue(interview.getId(), null, AUTO_EVALUATION, "evaluation:" + interview.getId(),
@@ -146,11 +146,19 @@ public class AiTaskService {
             task.setFinishedAt(LocalDateTime.now());
             task.setErrorMessage(null);
             taskMapper.updateById(task);
+            if (AUTO_EVALUATION.equals(task.getTaskType())) {
+                markInterviewReportReady(task.getInterviewId());
+            }
         } catch (RuntimeException exception) {
             task.setStatus(task.getAttempts() < task.getMaxAttempts() && retryable(exception) ? "PENDING" : "FAILED");
             task.setScheduledAt(LocalDateTime.now().plusSeconds(30));
             task.setErrorMessage(truncate(exception.getMessage()));
-            if ("FAILED".equals(task.getStatus())) task.setFinishedAt(LocalDateTime.now());
+            if ("FAILED".equals(task.getStatus())) {
+                task.setFinishedAt(LocalDateTime.now());
+                if (AUTO_EVALUATION.equals(task.getTaskType())) {
+                    markInterviewEvaluationFailed(task.getInterviewId());
+                }
+            }
             taskMapper.updateById(task);
         }
     }
@@ -168,7 +176,7 @@ public class AiTaskService {
 
     private String evaluateInterview(AiTask task) {
         Interview interview = requireInterview(task.getInterviewId());
-        if (interview.getStatus() != Interview.COMPLETED) throw new IllegalStateException("面试尚未结束，不能自动评分");
+        if (interview.getStatus() != Interview.REPORT_GENERATING) throw new IllegalStateException("面试尚未进入报告生成中，不能自动评分");
         List<InterviewQuestion> interviewQuestions = interviewQuestionMapper.selectList(new LambdaQueryWrapper<InterviewQuestion>()
                 .eq(InterviewQuestion::getInterviewId, interview.getId()).orderByAsc(InterviewQuestion::getSequenceNo));
         if (interviewQuestions.isEmpty()) throw new IllegalStateException("面试未配置题目，无法生成评测");
@@ -243,6 +251,22 @@ public class AiTaskService {
         report.setPublishedAt(LocalDateTime.now());
         if (report.getId() == null) reportMapper.insert(report); else reportMapper.updateById(report);
         return report;
+    }
+
+    private void markInterviewReportReady(Long interviewId) {
+        if (interviewId == null) return;
+        Interview interview = interviewMapper.selectById(interviewId);
+        if (interview == null || interview.getStatus() != Interview.REPORT_GENERATING) return;
+        interview.setStatus(Interview.REPORT_READY);
+        interviewMapper.updateById(interview);
+    }
+
+    private void markInterviewEvaluationFailed(Long interviewId) {
+        if (interviewId == null) return;
+        Interview interview = interviewMapper.selectById(interviewId);
+        if (interview == null || interview.getStatus() != Interview.REPORT_GENERATING) return;
+        interview.setStatus(Interview.COMPLETED);
+        interviewMapper.updateById(interview);
     }
 
     private AiTask enqueue(Long interviewId, Long answerId, String type, String dedupeKey, String payload) {

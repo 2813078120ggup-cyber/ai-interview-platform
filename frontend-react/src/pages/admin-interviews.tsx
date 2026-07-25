@@ -21,6 +21,13 @@ import { Card } from '@/components/ui/card'
 import { recordAuditLog } from '@/lib/audit-log'
 import { request, type Interview } from '@/lib/api'
 import {
+  canViewReport,
+  INTERVIEW_STATUS,
+  interviewStatusText,
+  interviewStatusTone,
+  isReportPending,
+} from '@/lib/interview-status'
+import {
   fillTemplate,
   listTemplates,
   saveTemplate,
@@ -53,8 +60,6 @@ type Template = { id: string; name: string; title: string; type: string; duratio
 type FormState = { title: string; candidateId: string; scheduledAt: string; duration: number; type: string; source: 'question' | 'bank'; questionIds: string[]; questionBankId: string; questionCount: number }
 type BulkState = { templateId: string; candidateIds: string[]; scheduledAt: string; interval: number; questionBankId: string }
 
-const statusText: Record<number, string> = { 0: '待开始', 1: '进行中', 2: '已结束', 3: '已取消', 4: '已通过' }
-const statusTone = (status: number): 'default' | 'success' | 'warning' | 'danger' | 'info' => status === 4 ? 'success' : status === 1 ? 'success' : status === 0 ? 'info' : status === 2 ? 'default' : status === 3 ? 'warning' : 'default'
 const localInput = () => { const date = new Date(Date.now() + 10 * 60_000); date.setSeconds(0, 0); return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}` }
 const toBackendTime = (value: string) => value.length === 16 ? `${value}:00` : value
 const dateText = (value?: string) => value?.replace('T', ' ').slice(0, 16) || '-'
@@ -275,6 +280,9 @@ export function AdminInterviews() {
           <option value="2">已结束</option>
           <option value="3">已取消</option>
           <option value="4">已通过</option>
+          <option value="5">报告生成中</option>
+          <option value="6">已出报告</option>
+          <option value="7">未通过</option>
         </select>
       </div>
       <div>
@@ -308,9 +316,9 @@ export function AdminInterviews() {
                   <p className="mt-1 text-xs text-muted-foreground">{person?.username}</p>
                 </td>
                 <td className="px-5 py-5 text-muted-foreground">{dateText(item.scheduledAt)}</td>
-                <td className="px-5 py-5"><Badge className="shrink-0" tone={statusTone(item.status)}>{statusText[item.status]}</Badge></td>
+                <td className="px-5 py-5"><Badge className="shrink-0" tone={interviewStatusTone(item.status)}>{interviewStatusText[item.status] ?? '未知状态'}</Badge></td>
                 <td className="px-5 py-5">
-                  {report ? <Badge className="shrink-0" tone="success">已生成 · {report.totalScore} 分</Badge> : (item.status === 2 || item.status === 4) ? <Badge className="shrink-0" tone="warning">生成中</Badge> : <span className="whitespace-nowrap text-xs text-muted-foreground">面试结束后生成</span>}
+                  {report ? <Badge className="shrink-0" tone="success">已生成 · {report.totalScore} 分</Badge> : isReportPending(item.status) ? <Badge className="shrink-0" tone="warning">生成中</Badge> : <span className="whitespace-nowrap text-xs text-muted-foreground">面试结束后生成</span>}
                 </td>
                 <td className="relative px-5 py-5 align-middle">
                   <div className="grid grid-cols-[68px_72px_104px] justify-end gap-2">
@@ -328,12 +336,12 @@ export function AdminInterviews() {
                         <button className="fixed inset-0 z-20 cursor-default" aria-label="关闭更多操作菜单" onClick={() => setOpenActions(undefined)} />
                         <div className="absolute right-0 top-11 z-30 w-36 overflow-hidden rounded-2xl border border-border bg-surface p-1.5 text-sm shadow-2xl">
                           <button className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition hover:bg-muted" onClick={() => { setOpenActions(undefined); setNoticeTarget(item) }}><Bell className="h-4 w-4" />发送通知</button>
-                          {item.status !== 3 && item.status !== 4 && <button className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition hover:bg-muted" onClick={() => { setOpenActions(undefined); setActionTarget({ type: 'pass', interview: item }) }}><CheckCircle2 className="h-4 w-4" />标记通过</button>}
+                          {([INTERVIEW_STATUS.COMPLETED, INTERVIEW_STATUS.REPORT_READY, INTERVIEW_STATUS.FAILED] as number[]).includes(item.status) && <button className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition hover:bg-muted" onClick={() => { setOpenActions(undefined); setActionTarget({ type: 'pass', interview: item }) }}><CheckCircle2 className="h-4 w-4" />标记通过</button>}
                           <button className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-rose-600 transition hover:bg-rose-50 dark:text-rose-200 dark:hover:bg-rose-400/10" onClick={() => { setOpenActions(undefined); setActionTarget({ type: 'delete', interview: item }) }}><Trash2 className="h-4 w-4" />删除面试</button>
                         </div>
                       </>}
                     </div>
-                    {report ? <Button className="h-9 w-full gap-1 whitespace-nowrap px-2 text-xs" onClick={() => void openReport(report)} title="查看报告"><FileText className="hidden h-3.5 w-3.5 xl:block" />查看报告</Button> : <span className="h-9" aria-hidden="true" />}
+                    {report && canViewReport(item.status) ? <Button className="h-9 w-full gap-1 whitespace-nowrap px-2 text-xs" onClick={() => void openReport(report)} title="查看报告"><FileText className="hidden h-3.5 w-3.5 xl:block" />查看报告</Button> : <span className="h-9" aria-hidden="true" />}
                   </div>
                 </td>
               </tr>
