@@ -1,4 +1,4 @@
-import { Bell, BookOpen, Bot, CalendarDays, History, LayoutDashboard, LogOut, Moon, Search, Sun, UserRound } from 'lucide-react'
+import { Bell, BookOpen, Bot, CalendarDays, History, LayoutDashboard, LogOut, Moon, Sun, UserRound } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { PageTransition } from '@/components/page-transition'
@@ -44,11 +44,7 @@ export function AdminPageShell({ children }: { children: ReactNode }) {
     </aside>
 
     <main className="min-h-screen pl-72">
-      <header className="sticky top-0 z-30 flex h-20 items-center justify-between border-b border-border bg-background/82 px-8 backdrop-blur-xl">
-        <div className="flex max-w-xl flex-1 items-center gap-2 rounded-full border border-border bg-surface px-4 py-2.5 shadow-sm">
-          <Search className="h-4 w-4 text-muted-foreground" />
-          <input className="w-full bg-transparent text-sm outline-none" placeholder="搜索候选人、面试或题库" />
-        </div>
+      <header className="sticky top-0 z-30 flex h-20 items-center justify-end border-b border-border bg-background/82 px-8 backdrop-blur-xl">
         <div className="flex items-center gap-2">
           <Button variant="ghost" className="h-10 w-10 rounded-full px-0" onClick={toggleTheme} aria-label={dark ? '切换为浅色模式' : '切换为深色模式'}>{dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</Button>
           <Button variant="ghost" className="h-10 w-10 rounded-full px-0" aria-label="通知"><Bell className="h-4 w-4" /></Button>
