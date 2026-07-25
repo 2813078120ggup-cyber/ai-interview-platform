@@ -59,7 +59,20 @@ type ReportItem = {
 type ReportDetail = ReportDetailData
 type Template = { id: string; name: string; title: string; type: string; duration: number; questionCount: number; note: string }
 type FormState = { title: string; candidateId: string; scheduledAt: string; duration: number; type: string; source: 'question' | 'bank'; questionIds: string[]; questionBankId: string; questionCount: number; interviewerStyle: string }
-type BulkState = { templateId: string; candidateIds: string[]; scheduledAt: string; interval: number; questionBankId: string }
+type BulkState = {
+  templateId: string
+  title: string
+  candidateIds: string[]
+  scheduledAt: string
+  interval: number
+  duration: number
+  type: string
+  source: 'question' | 'bank'
+  questionIds: string[]
+  questionBankId: string
+  questionCount: number
+  interviewerStyle: string
+}
 type CreateMode = 'single' | 'bulk'
 
 const localInput = () => { const date = new Date(Date.now() + 10 * 60_000); date.setSeconds(0, 0); return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}` }
@@ -72,7 +85,20 @@ const templates: Template[] = [
   { id: 'campus', name: '校园招聘通用', title: '综合素质与项目经历面试', type: 'hr', duration: 40, questionCount: 5, note: '自我介绍、项目复盘、沟通表达与稳定性' },
 ]
 const defaultForm = (): FormState => ({ title: '', candidateId: '', scheduledAt: localInput(), duration: 60, type: 'tech', source: 'question', questionIds: [], questionBankId: '', questionCount: 5, interviewerStyle: 'big-tech' })
-const defaultBulk = (): BulkState => ({ templateId: templates[0].id, candidateIds: [], scheduledAt: localInput(), interval: 60, questionBankId: '' })
+const defaultBulk = (): BulkState => ({
+  templateId: templates[0].id,
+  title: templates[0].title,
+  candidateIds: [],
+  scheduledAt: localInput(),
+  interval: 60,
+  duration: templates[0].duration,
+  type: templates[0].type,
+  source: 'bank',
+  questionIds: [],
+  questionBankId: '',
+  questionCount: templates[0].questionCount,
+  interviewerStyle: 'big-tech',
+})
 
 export function AdminInterviews() {
   const nav = useNavigate()
@@ -165,6 +191,19 @@ export function AdminInterviews() {
     setForm(previous => ({ ...previous, title: template.title, duration: template.duration, type: template.type, questionCount: template.questionCount, source: 'bank' }))
   }
 
+  function applyBulkTemplate(template: Template) {
+    setBulk(previous => ({
+      ...previous,
+      templateId: template.id,
+      title: template.title,
+      duration: template.duration,
+      type: template.type,
+      questionCount: template.questionCount,
+      source: 'bank',
+      questionIds: [],
+    }))
+  }
+
   async function openReport(report: ReportItem) {
     setSelectedReport(report)
     setReportDetail(undefined)
@@ -198,15 +237,30 @@ export function AdminInterviews() {
 
   async function createBulk() {
     const template = templates.find(item => item.id === bulk.templateId) ?? templates[0]
+    if (!bulk.title.trim()) { setError('请填写批量面试主题'); return }
     if (!bulk.candidateIds.length) { setError('请选择至少一名候选人'); return }
-    if (!bulk.questionBankId) { setError('请选择批量面试题库'); return }
+    if (bulk.source === 'question' && !bulk.questionIds.length) { setError('请至少为批量面试选择一道题目'); return }
+    if (bulk.source === 'bank' && !bulk.questionBankId) { setError('请选择批量面试题库'); return }
     setSaving(true)
     try {
       const start = new Date(bulk.scheduledAt)
       for (const [index, candidateId] of bulk.candidateIds.entries()) {
         const scheduled = new Date(start.getTime() + index * bulk.interval * 60_000)
         const local = `${scheduled.getFullYear()}-${String(scheduled.getMonth() + 1).padStart(2, '0')}-${String(scheduled.getDate()).padStart(2, '0')}T${String(scheduled.getHours()).padStart(2, '0')}:${String(scheduled.getMinutes()).padStart(2, '0')}:00`
-        await request('/v1/interviews', { method: 'POST', body: JSON.stringify({ title: template.title, candidateId, scheduledAt: local, duration: template.duration, type: template.type, interviewerStyle: 'big-tech', questionIds: [], questionBankId: bulk.questionBankId, questionCount: template.questionCount }) })
+        await request('/v1/interviews', {
+          method: 'POST',
+          body: JSON.stringify({
+            title: bulk.title,
+            candidateId,
+            scheduledAt: local,
+            duration: bulk.duration,
+            type: bulk.type,
+            interviewerStyle: bulk.interviewerStyle,
+            questionIds: bulk.source === 'question' ? bulk.questionIds : [],
+            questionBankId: bulk.source === 'bank' ? bulk.questionBankId : undefined,
+            questionCount: bulk.source === 'bank' ? bulk.questionCount : undefined,
+          }),
+        })
       }
       recordAuditLog({ module: '面试管理', action: '批量创建面试', operator: profile()?.realName ?? '管理员', target: template.name, detail: `批量安排 ${bulk.candidateIds.length} 场面试` })
       setDialog(false)
@@ -369,7 +423,7 @@ export function AdminInterviews() {
       </div>
     </Card>
 
-    {dialog && <InterviewDialog saving={saving} mode={createMode} setMode={setCreateMode} onClose={() => setDialog(false)} onSingleSubmit={create} onBulkSubmit={createBulk} form={form} setForm={setForm} bulk={bulk} setBulk={setBulk} candidates={candidates} questions={questions} banks={banks} templates={templates} applyTemplate={applyTemplate} />}
+    {dialog && <InterviewDialog saving={saving} mode={createMode} setMode={setCreateMode} onClose={() => setDialog(false)} onSingleSubmit={create} onBulkSubmit={createBulk} form={form} setForm={setForm} bulk={bulk} setBulk={setBulk} candidates={candidates} questions={questions} banks={banks} templates={templates} applyTemplate={applyTemplate} applyBulkTemplate={applyBulkTemplate} />}
     {noticeTarget && <NotificationDialog interview={noticeTarget} candidate={candidateById.get(String(noticeTarget.candidateId))} onClose={() => setNoticeTarget(undefined)} />}
     {actionTarget && <InterviewActionDialog target={actionTarget} candidate={candidateById.get(String(actionTarget.interview.candidateId))} busy={actionBusy} onClose={() => setActionTarget(undefined)} onConfirm={confirmInterviewAction} />}
     {selectedReport && <ReportDialog report={selectedReport} detail={reportDetail} loading={reportLoading} onClose={closeReport} />}
@@ -560,6 +614,7 @@ function InterviewDialog({
   banks,
   templates,
   applyTemplate,
+  applyBulkTemplate,
 }: {
   saving: boolean
   mode: CreateMode
@@ -576,6 +631,7 @@ function InterviewDialog({
   banks: QuestionBank[]
   templates: Template[]
   applyTemplate: (value: Template) => void
+  applyBulkTemplate: (value: Template) => void
 }) {
   const bulkTemplate = templates.find(item => item.id === bulk.templateId) ?? templates[0]
 
@@ -674,29 +730,62 @@ function InterviewDialog({
             <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-surface text-[var(--accent)]"><Users className="h-5 w-5" /></span>
             <div>
               <h3 className="font-bold">批量排期</h3>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">选择模板、候选人和题库后，系统会按照开始时间与间隔自动创建多场 AI 面试。</p>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">批量创建现在与单个创建共用配置能力：面试官风格、题目来源、题库抽题、题目多选和时长都会同步生效。</p>
             </div>
           </div>
         </div>
-        <div className="grid gap-5 sm:grid-cols-2">
-          <label className="text-sm font-semibold">面试模板
-            <select value={bulk.templateId} onChange={event => setBulk({ ...bulk, templateId: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal">
-              {templates.map(item => <option key={item.id} value={item.id}>{item.name} · {item.duration} 分钟</option>)}
-            </select>
-          </label>
+        <div>
+          <p className="text-sm font-semibold">面试模板</p>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            {templates.map(item => <button key={item.id} type="button" onClick={() => applyBulkTemplate(item)} className={`rounded-2xl border p-3 text-left text-sm transition ${bulk.templateId === item.id ? 'border-[var(--accent)] bg-[var(--accent-soft)] shadow-sm' : 'border-border hover:border-[var(--accent)] hover:bg-muted'}`}>
+              <strong>{item.name}</strong>
+              <p className="mt-1 text-xs text-muted-foreground">{item.note}</p>
+            </button>)}
+          </div>
+        </div>
+        <label className="text-sm font-semibold">批量面试主题
+          <input value={bulk.title} onChange={event => setBulk({ ...bulk, title: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal outline-none focus:border-[var(--accent)]" />
+        </label>
+        <label className="text-sm font-semibold">候选人（可多选）
+          <select multiple value={bulk.candidateIds} onChange={event => setBulk({ ...bulk, candidateIds: Array.from(event.target.selectedOptions, option => option.value) })} className="mt-2 h-44 w-full rounded-2xl border border-border bg-background p-3 font-normal">
+            {candidates.map(item => <option key={item.id} value={item.id}>{item.realName}（{item.username}）</option>)}
+          </select>
+          <span className="mt-2 block text-xs text-muted-foreground">会按照选择顺序和间隔时间依次排期。</span>
+        </label>
+        <div>
+          <p className="text-sm font-semibold">AI 面试官风格</p>
+          <div className="mt-2 grid gap-2 sm:grid-cols-3">
+            {interviewerStyles.map(item => <button key={item.key} type="button" onClick={() => setBulk({ ...bulk, interviewerStyle: item.key })} className={`rounded-2xl border p-3 text-left text-sm transition ${bulk.interviewerStyle === item.key ? 'border-[var(--accent)] bg-[var(--accent-soft)] shadow-sm' : 'border-border hover:border-[var(--accent)] hover:bg-muted'}`}>
+              <strong>{item.label}</strong>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">{item.description}</p>
+            </button>)}
+          </div>
+        </div>
+        <div>
+          <p className="text-sm font-semibold">题目来源</p>
+          <div className="mt-2 flex rounded-full bg-muted p-1">
+            <button type="button" onClick={() => setBulk({ ...bulk, source: 'question', questionBankId: '' })} className={`flex-1 rounded-full px-3 py-2 text-sm transition ${bulk.source === 'question' ? 'bg-surface font-semibold shadow-sm' : 'text-muted-foreground'}`}>自定义选择题目</button>
+            <button type="button" onClick={() => setBulk({ ...bulk, source: 'bank', questionIds: [] })} className={`flex-1 rounded-full px-3 py-2 text-sm transition ${bulk.source === 'bank' ? 'bg-surface font-semibold shadow-sm' : 'text-muted-foreground'}`}>选择题库抽题</button>
+          </div>
+        </div>
+        {bulk.source === 'question' ? <label className="text-sm font-semibold">面试题目（可多选任意题目）
+          <select multiple value={bulk.questionIds} onChange={event => setBulk({ ...bulk, questionIds: Array.from(event.target.selectedOptions, option => option.value) })} className="mt-2 h-40 w-full rounded-2xl border border-border bg-background p-3 text-sm font-normal">
+            {questions.map(item => <option key={item.id} value={item.id}>#{item.id} · {item.content}</option>)}
+          </select>
+          <span className="mt-2 block text-xs text-muted-foreground">所有候选人都会使用同一组题目快照。</span>
+        </label> : <div className="grid gap-5 sm:grid-cols-[1fr_150px]">
           <label className="text-sm font-semibold">面试题库
             <select value={bulk.questionBankId} onChange={event => setBulk({ ...bulk, questionBankId: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal">
               <option value="">选择题库</option>
               {banks.map(item => <option key={item.id} value={item.id}>{item.name}（{item.bankCode}）</option>)}
             </select>
           </label>
-        </div>
-        <label className="text-sm font-semibold">候选人（可多选）
-          <select multiple value={bulk.candidateIds} onChange={event => setBulk({ ...bulk, candidateIds: Array.from(event.target.selectedOptions, option => option.value) })} className="mt-2 h-48 w-full rounded-2xl border border-border bg-background p-3 font-normal">
-            {candidates.map(item => <option key={item.id} value={item.id}>{item.realName}（{item.username}）</option>)}
-          </select>
-          <span className="mt-2 block text-xs text-muted-foreground">会按照选择顺序和间隔时间依次排期。</span>
-        </label>
+          <label className="text-sm font-semibold">抽题数量
+            <select value={bulk.questionCount} onChange={event => setBulk({ ...bulk, questionCount: Number(event.target.value) })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal">
+              {[3, 5, 8, 10, 15, 20].map(value => <option key={value}>{value}</option>)}
+            </select>
+          </label>
+        </div>}
         <div className="grid gap-5 sm:grid-cols-2">
           <label className="text-sm font-semibold">第一场开始时间
             <input type="datetime-local" value={bulk.scheduledAt} onChange={event => setBulk({ ...bulk, scheduledAt: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal" />
@@ -705,8 +794,20 @@ function InterviewDialog({
             <input type="number" min="10" max="240" value={bulk.interval} onChange={event => setBulk({ ...bulk, interval: Number(event.target.value) })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal" />
           </label>
         </div>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <label className="text-sm font-semibold">面试类型
+            <select value={bulk.type} onChange={event => setBulk({ ...bulk, type: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal">
+              <option value="tech">技术面试</option>
+              <option value="hr">HR 综合面</option>
+              <option value="algorithm">算法面试</option>
+            </select>
+          </label>
+          <label className="text-sm font-semibold">时长（分钟）
+            <input type="number" min="1" max="480" value={bulk.duration} onChange={event => setBulk({ ...bulk, duration: Number(event.target.value) })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal" />
+          </label>
+        </div>
         <div className="rounded-[24px] border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
-          当前模板：<strong className="text-foreground">{bulkTemplate.name}</strong> · 每场 {bulkTemplate.duration} 分钟 · 随机抽取 {bulkTemplate.questionCount} 题
+          当前模板：<strong className="text-foreground">{bulkTemplate.name}</strong> · {bulk.source === 'bank' ? `每场随机抽取 ${bulk.questionCount} 题` : `每场使用 ${bulk.questionIds.length} 道自选题`} · 每场 {bulk.duration} 分钟
         </div>
       </div>}
 
