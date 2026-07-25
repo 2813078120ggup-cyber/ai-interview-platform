@@ -85,6 +85,7 @@ export function InterviewRoom() {
   const video = useRef<HTMLVideoElement>(null)
   const virtualVideo = useRef<HTMLVideoElement>(null)
   const virtualPlayer = useRef<ReturnType<typeof mpegts.createPlayer> | null>(null)
+  const virtualSession = useRef('')
   const stream = useRef<MediaStream | null>(null)
   const recognition = useRef<SpeechRecognitionLike | null>(null)
   const speechToken = useRef(0)
@@ -99,6 +100,10 @@ export function InterviewRoom() {
   const virtualStreamFlv = flvVirtualUrl(virtualStreamUrl)
   const virtualStreamEmbeddable = embeddableVirtualUrl(virtualStreamUrl)
   const virtualStreamUnsupported = Boolean(virtualStreamUrl) && !virtualStreamPlayable && !virtualStreamFlv && !virtualStreamEmbeddable
+
+  useEffect(() => {
+    virtualSession.current = virtualSessionId
+  }, [virtualSessionId])
 
   useEffect(() => {
     let cancelled = false
@@ -158,6 +163,7 @@ export function InterviewRoom() {
     recognition.current?.stop()
     virtualPlayer.current?.destroy()
     window.speechSynthesis?.cancel()
+    void releaseVirtualHuman(virtualSession.current, false)
   }, [])
 
   useEffect(() => {
@@ -226,6 +232,25 @@ export function InterviewRoom() {
       return false
     } finally {
       setVirtualLoading(false)
+    }
+  }
+
+  async function releaseVirtualHuman(sessionId = virtualSession.current, updateState = true) {
+    const value = sessionId.trim()
+    if (!value) return
+    virtualSession.current = ''
+    if (updateState) {
+      setVirtualSessionId('')
+      setVirtualActive(false)
+      setVirtualStreamUrl('')
+    }
+    try {
+      await request('/v1/virtual-human/stop', {
+        method: 'POST',
+        body: JSON.stringify({ sessionId: value }),
+      })
+    } catch {
+      // 页面离开和结束面试时不打断主流程；后端仍会在连接关闭/应用停止时做兜底清理。
     }
   }
 
@@ -348,6 +373,7 @@ export function InterviewRoom() {
     setFinishMessage('正在锁定本次答题记录…')
     try {
       const result = await request<EndResponse>('/v1/interviews/' + id + '/end', { method: 'POST' })
+      await releaseVirtualHuman()
       localStorage.removeItem(roomStateKey(id))
       questions.forEach(item => localStorage.removeItem(draftKey(id, item.interviewQuestionId)))
       setInterview(result.interview)

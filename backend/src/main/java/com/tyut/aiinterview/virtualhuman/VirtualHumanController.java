@@ -20,4 +20,10 @@ public class VirtualHumanController {
     public ApiResponse<VirtualHumanDtos.SpeakResponse> speak(@Valid @RequestBody VirtualHumanDtos.SpeakRequest request) {
         return ApiResponse.ok(service.speak(request));
     }
+
+    @PostMapping("/stop")
+    public ApiResponse<Void> stop(@Valid @RequestBody VirtualHumanDtos.StopRequest request) {
+        service.stop(request);
+        return ApiResponse.ok(null);
+    }
 }

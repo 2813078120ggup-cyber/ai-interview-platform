@@ -19,6 +19,10 @@ public class VirtualHumanService {
                 .orElseGet(() -> fallback("未启用虚拟人 Provider，已降级为本地数字人与浏览器朗读", request.text()));
     }
 
+    public void stop(VirtualHumanDtos.StopRequest request) {
+        xunfeiClient.stop(request.sessionId());
+    }
+
     private VirtualHumanDtos.SpeakResponse drive(AiProviderService.RuntimeProvider provider, VirtualHumanDtos.SpeakRequest request) {
         if (!isConfigured(provider)) {
             return fallback("虚拟人 Provider 配置不完整，请在系统设置中补齐 Base URL、AppID、API Key、API Secret 和 avatarId", request.text());

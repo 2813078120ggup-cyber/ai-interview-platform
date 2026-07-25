@@ -24,4 +24,9 @@ public final class VirtualHumanDtos {
             String fallbackText
     ) {
     }
+
+    public record StopRequest(
+            @NotBlank(message = "虚拟人会话 ID 不能为空") String sessionId
+    ) {
+    }
 }
