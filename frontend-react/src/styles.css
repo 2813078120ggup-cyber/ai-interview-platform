@@ -173,6 +173,213 @@ button:disabled { cursor: not-allowed; }
   opacity: .52;
 }
 
+.login-template-panel {
+  transform-style: preserve-3d;
+}
+
+.login-particle-layer {
+  pointer-events: none;
+}
+
+.login-particle {
+  position: absolute;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--foreground) 70%, transparent);
+  opacity: 0;
+  animation: login-particle-drift linear infinite;
+}
+
+@keyframes login-particle-drift {
+  0% { transform: translate3d(0, 0, 0); opacity: 0; }
+  12% { opacity: .16; }
+  82% { opacity: .1; }
+  100% { transform: translate3d(38px, -120px, 0); opacity: 0; }
+}
+
+.login-ai-stage {
+  position: relative;
+  min-height: 260px;
+  overflow: hidden;
+  border-radius: 30px;
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+  background:
+    radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 10rem),
+    linear-gradient(145deg, rgba(255, 255, 255, .66), rgba(255, 255, 255, .26));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .75);
+}
+
+.login-pulse-ring {
+  position: absolute;
+  left: 50%;
+  top: 47%;
+  border-radius: 999px;
+  border: 1.5px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+  transform: translate(-50%, -50%);
+  animation: login-pulse-expand 3.2s ease-out infinite;
+}
+
+@keyframes login-pulse-expand {
+  0% { width: 54px; height: 54px; opacity: .5; }
+  100% { width: 230px; height: 230px; opacity: 0; }
+}
+
+.login-dashed-orbit,
+.login-solid-orbit {
+  position: absolute;
+  left: 50%;
+  top: 47%;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+}
+
+.login-dashed-orbit {
+  width: 178px;
+  height: 178px;
+  border: 1.5px dashed color-mix(in srgb, var(--foreground) 16%, transparent);
+  animation: login-rotate 24s linear infinite;
+}
+
+.login-solid-orbit {
+  width: 122px;
+  height: 122px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+  animation: login-rotate-reverse 18s linear infinite;
+}
+
+@keyframes login-rotate {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes login-rotate-reverse {
+  from { transform: translate(-50%, -50%) rotate(360deg); }
+  to { transform: translate(-50%, -50%) rotate(0deg); }
+}
+
+.login-ai-core {
+  position: absolute;
+  left: 50%;
+  top: 47%;
+  z-index: 3;
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  border-radius: 999px;
+  color: #fff;
+  background: #151412;
+  box-shadow: 0 0 0 9px rgba(20, 18, 17, .06);
+  transform: translate(-50%, -50%);
+  animation: login-core-breathe 3s ease-in-out infinite;
+}
+
+@keyframes login-core-breathe {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 8px rgba(20, 18, 17, .06); }
+  50% { transform: translate(-50%, -50%) scale(1.08); box-shadow: 0 0 0 17px rgba(20, 18, 17, .035); }
+}
+
+.login-orbit-icon {
+  position: absolute;
+  left: 50%;
+  top: 47%;
+  z-index: 4;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  margin: -19px 0 0 -19px;
+  place-items: center;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+  background: rgba(255, 255, 255, .82);
+  color: var(--accent);
+  box-shadow: 0 8px 22px rgba(20, 18, 17, .07);
+  animation: login-orbit 14s linear infinite;
+}
+
+@keyframes login-orbit {
+  0% { transform: rotate(0deg) translateX(98px) rotate(0deg); }
+  100% { transform: rotate(360deg) translateX(98px) rotate(-360deg); }
+}
+
+.login-neural-svg {
+  position: absolute;
+  left: 50%;
+  top: 47%;
+  z-index: 2;
+  width: 260px;
+  height: 260px;
+  margin: -130px 0 0 -130px;
+  pointer-events: none;
+}
+
+.login-neural-line {
+  stroke: color-mix(in srgb, var(--foreground) 12%, transparent);
+  stroke-width: 1;
+  stroke-dasharray: 3 5;
+  animation: login-neural-flow 1.55s linear infinite;
+}
+
+@keyframes login-neural-flow {
+  to { stroke-dashoffset: -16; }
+}
+
+.login-waveform {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  z-index: 3;
+  display: flex;
+  height: 30px;
+  align-items: flex-end;
+  gap: 4px;
+  transform: translateX(-50%);
+}
+
+.login-wave-bar {
+  width: 4px;
+  height: 7px;
+  border-radius: 999px;
+  background: #151412;
+  opacity: .3;
+  animation: login-wave-jump 1.12s ease-in-out infinite;
+}
+
+.login-wave-bar:nth-child(2n) { animation-duration: .92s; }
+.login-wave-bar:nth-child(3n) { animation-duration: 1.24s; }
+
+@keyframes login-wave-jump {
+  0%, 100% { height: 7px; opacity: .24; }
+  50% { height: 26px; opacity: .58; }
+}
+
+.login-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #9b6847;
+  box-shadow: 0 0 0 4px rgba(155, 104, 71, .13);
+  animation: login-status-pulse 2s ease-in-out infinite;
+}
+
+@keyframes login-status-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .5; transform: scale(.86); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-particle,
+  .login-pulse-ring,
+  .login-dashed-orbit,
+  .login-solid-orbit,
+  .login-ai-core,
+  .login-orbit-icon,
+  .login-neural-line,
+  .login-wave-bar,
+  .login-status-dot {
+    animation: none !important;
+  }
+}
+
 .print-only { display: none; }
 @media print {
   @page {
