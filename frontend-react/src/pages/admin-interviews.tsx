@@ -60,6 +60,7 @@ type ReportDetail = ReportDetailData
 type Template = { id: string; name: string; title: string; type: string; duration: number; questionCount: number; note: string }
 type FormState = { title: string; candidateId: string; scheduledAt: string; duration: number; type: string; source: 'question' | 'bank'; questionIds: string[]; questionBankId: string; questionCount: number; interviewerStyle: string }
 type BulkState = { templateId: string; candidateIds: string[]; scheduledAt: string; interval: number; questionBankId: string }
+type CreateMode = 'single' | 'bulk'
 
 const localInput = () => { const date = new Date(Date.now() + 10 * 60_000); date.setSeconds(0, 0); return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}` }
 const toBackendTime = (value: string) => value.length === 16 ? `${value}:00` : value
@@ -86,7 +87,7 @@ export function AdminInterviews() {
   const [status, setStatus] = useState('')
   const [time, setTime] = useState('all')
   const [dialog, setDialog] = useState(false)
-  const [bulkDialog, setBulkDialog] = useState(false)
+  const [createMode, setCreateMode] = useState<CreateMode>('single')
   const [noticeTarget, setNoticeTarget] = useState<InterviewRow>()
   const [actionTarget, setActionTarget] = useState<{ type: 'pass' | 'delete'; interview: InterviewRow }>()
   const [selectedReport, setSelectedReport] = useState<ReportItem>()
@@ -208,7 +209,8 @@ export function AdminInterviews() {
         await request('/v1/interviews', { method: 'POST', body: JSON.stringify({ title: template.title, candidateId, scheduledAt: local, duration: template.duration, type: template.type, interviewerStyle: 'big-tech', questionIds: [], questionBankId: bulk.questionBankId, questionCount: template.questionCount }) })
       }
       recordAuditLog({ module: '面试管理', action: '批量创建面试', operator: profile()?.realName ?? '管理员', target: template.name, detail: `批量安排 ${bulk.candidateIds.length} 场面试` })
-      setBulkDialog(false)
+      setDialog(false)
+      setCreateMode('single')
       setBulk(defaultBulk())
       await load()
     } catch (reason) {
@@ -259,16 +261,13 @@ export function AdminInterviews() {
         <h1 className="mt-2 text-4xl font-bold tracking-tight">面试管理</h1>
         <p className="mt-3 max-w-2xl text-muted-foreground">创建、检索和查看 AI 面试安排。已结束且生成报告的面试，可直接在操作栏查看评测报告。</p>
       </div>
-      <div className="flex gap-2">
-        <Button variant="secondary" onClick={() => setBulkDialog(true)}><Users className="h-4 w-4" />批量创建</Button>
-        <Button onClick={() => { setForm(defaultForm()); setDialog(true) }}><Plus className="h-4 w-4" />创建 AI 面试</Button>
-      </div>
+      <Button onClick={() => { setCreateMode('single'); setForm(defaultForm()); setBulk(defaultBulk()); setDialog(true) }}><Plus className="h-4 w-4" />创建 AI 面试</Button>
     </header>
 
     {error && <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
 
     <section className="mt-7 grid gap-4 md:grid-cols-4">
-      {templates.map((item, index) => <Card key={item.id} motionDelay={index * .04} className="cursor-pointer bg-[linear-gradient(180deg,var(--surface),color-mix(in_srgb,var(--surface)_84%,var(--accent-soft)))]" onClick={() => { applyTemplate(item); setDialog(true) }}>
+      {templates.map((item, index) => <Card key={item.id} motionDelay={index * .04} className="cursor-pointer bg-[linear-gradient(180deg,var(--surface),color-mix(in_srgb,var(--surface)_84%,var(--accent-soft)))]" onClick={() => { setCreateMode('single'); applyTemplate(item); setDialog(true) }}>
         <Layers3 className="h-5 w-5 text-[var(--accent)]" />
         <h3 className="mt-4 font-bold">{item.name}</h3>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.note}</p>
@@ -370,8 +369,7 @@ export function AdminInterviews() {
       </div>
     </Card>
 
-    {dialog && <InterviewDialog saving={saving} onClose={() => setDialog(false)} onSubmit={create} form={form} setForm={setForm} candidates={candidates} questions={questions} banks={banks} templates={templates} applyTemplate={applyTemplate} />}
-    {bulkDialog && <BulkDialog saving={saving} onClose={() => setBulkDialog(false)} onSubmit={createBulk} bulk={bulk} setBulk={setBulk} candidates={candidates} banks={banks} templates={templates} />}
+    {dialog && <InterviewDialog saving={saving} mode={createMode} setMode={setCreateMode} onClose={() => setDialog(false)} onSingleSubmit={create} onBulkSubmit={createBulk} form={form} setForm={setForm} bulk={bulk} setBulk={setBulk} candidates={candidates} questions={questions} banks={banks} templates={templates} applyTemplate={applyTemplate} />}
     {noticeTarget && <NotificationDialog interview={noticeTarget} candidate={candidateById.get(String(noticeTarget.candidateId))} onClose={() => setNoticeTarget(undefined)} />}
     {actionTarget && <InterviewActionDialog target={actionTarget} candidate={candidateById.get(String(actionTarget.interview.candidateId))} busy={actionBusy} onClose={() => setActionTarget(undefined)} onConfirm={confirmInterviewAction} />}
     {selectedReport && <ReportDialog report={selectedReport} detail={reportDetail} loading={reportLoading} onClose={closeReport} />}
@@ -546,10 +544,187 @@ function ReportDialog({ report, detail, loading, onClose }: { report: ReportItem
   </div>
 }
 
-function InterviewDialog({ saving, onClose, onSubmit, form, setForm, candidates, questions, banks, templates, applyTemplate }: { saving: boolean; onClose: () => void; onSubmit: () => void; form: FormState; setForm: (value: FormState) => void; candidates: Candidate[]; questions: Question[]; banks: QuestionBank[]; templates: Template[]; applyTemplate: (value: Template) => void }) {
+function InterviewDialog({
+  saving,
+  mode,
+  setMode,
+  onClose,
+  onSingleSubmit,
+  onBulkSubmit,
+  form,
+  setForm,
+  bulk,
+  setBulk,
+  candidates,
+  questions,
+  banks,
+  templates,
+  applyTemplate,
+}: {
+  saving: boolean
+  mode: CreateMode
+  setMode: (value: CreateMode) => void
+  onClose: () => void
+  onSingleSubmit: () => void
+  onBulkSubmit: () => void
+  form: FormState
+  setForm: (value: FormState) => void
+  bulk: BulkState
+  setBulk: (value: BulkState) => void
+  candidates: Candidate[]
+  questions: Question[]
+  banks: QuestionBank[]
+  templates: Template[]
+  applyTemplate: (value: Template) => void
+}) {
+  const bulkTemplate = templates.find(item => item.id === bulk.templateId) ?? templates[0]
+
+  return <div className="fixed inset-0 z-50 overflow-y-auto bg-black/35 p-4 backdrop-blur-sm">
+    <div className="mx-auto my-8 max-w-4xl rounded-[34px] border border-border bg-surface p-6 shadow-2xl sm:p-8">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">INTERVIEW BUILDER</p>
+          <h2 className="mt-1 text-2xl font-black">创建 AI 面试</h2>
+          <p className="mt-2 text-sm text-muted-foreground">单人安排和批量排期已合并到同一个创建流程里。</p>
+        </div>
+        <button className="rounded-full p-2 hover:bg-muted" onClick={onClose} aria-label="关闭创建面试弹框"><X className="h-5 w-5" /></button>
+      </div>
+
+      <div className="mt-6 grid grid-cols-2 rounded-full border border-border bg-muted/50 p-1">
+        <button
+          type="button"
+          onClick={() => setMode('single')}
+          className={`rounded-full px-4 py-3 text-sm font-semibold transition ${mode === 'single' ? 'bg-surface text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+        >
+          单个创建
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode('bulk')}
+          className={`rounded-full px-4 py-3 text-sm font-semibold transition ${mode === 'bulk' ? 'bg-surface text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+        >
+          批量创建
+        </button>
+      </div>
+
+      {mode === 'single' ? <div className="mt-7 grid gap-5">
+        <div>
+          <p className="text-sm font-semibold">面试模板</p>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            {templates.map(item => <button key={item.id} type="button" onClick={() => applyTemplate(item)} className="rounded-2xl border border-border p-3 text-left text-sm transition hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]">
+              <strong>{item.name}</strong>
+              <p className="mt-1 text-xs text-muted-foreground">{item.note}</p>
+            </button>)}
+          </div>
+        </div>
+        <label className="text-sm font-semibold">面试主题
+          <input value={form.title} onChange={event => setForm({ ...form, title: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal outline-none focus:border-[var(--accent)]" />
+        </label>
+        <label className="text-sm font-semibold">候选人
+          <select value={form.candidateId} onChange={event => setForm({ ...form, candidateId: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal">
+            <option value="">选择候选人</option>
+            {candidates.map(item => <option value={item.id} key={item.id}>{item.realName}（{item.username}）</option>)}
+          </select>
+        </label>
+        <div>
+          <p className="text-sm font-semibold">AI 面试官风格</p>
+          <div className="mt-2 grid gap-2 sm:grid-cols-3">
+            {interviewerStyles.map(item => <button key={item.key} type="button" onClick={() => setForm({ ...form, interviewerStyle: item.key })} className={`rounded-2xl border p-3 text-left text-sm transition ${form.interviewerStyle === item.key ? 'border-[var(--accent)] bg-[var(--accent-soft)] shadow-sm' : 'border-border hover:border-[var(--accent)] hover:bg-muted'}`}>
+              <strong>{item.label}</strong>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">{item.description}</p>
+            </button>)}
+          </div>
+        </div>
+        <div>
+          <p className="text-sm font-semibold">题目来源</p>
+          <div className="mt-2 flex rounded-full bg-muted p-1">
+            <button type="button" onClick={() => setForm({ ...form, source: 'question', questionBankId: '' })} className={`flex-1 rounded-full px-3 py-2 text-sm transition ${form.source === 'question' ? 'bg-surface font-semibold shadow-sm' : 'text-muted-foreground'}`}>自定义选择题目</button>
+            <button type="button" onClick={() => setForm({ ...form, source: 'bank', questionIds: [] })} className={`flex-1 rounded-full px-3 py-2 text-sm transition ${form.source === 'bank' ? 'bg-surface font-semibold shadow-sm' : 'text-muted-foreground'}`}>选择题库抽题</button>
+          </div>
+        </div>
+        {form.source === 'question' ? <label className="text-sm font-semibold">面试题目（可多选任意题目）
+          <select multiple value={form.questionIds} onChange={event => setForm({ ...form, questionIds: Array.from(event.target.selectedOptions, option => option.value) })} className="mt-2 h-40 w-full rounded-2xl border border-border bg-background p-3 text-sm font-normal">
+            {questions.map(item => <option key={item.id} value={item.id}>#{item.id} · {item.content}</option>)}
+          </select>
+          <span className="mt-2 block text-xs text-muted-foreground">按住 Ctrl / Command 可多选。</span>
+        </label> : <div className="grid gap-5 sm:grid-cols-[1fr_150px]">
+          <label className="text-sm font-semibold">面试题库
+            <select value={form.questionBankId} onChange={event => setForm({ ...form, questionBankId: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal">
+              <option value="">选择题库</option>
+              {banks.map(item => <option key={item.id} value={item.id}>{item.name}（{item.bankCode}）</option>)}
+            </select>
+          </label>
+          <label className="text-sm font-semibold">抽题数量
+            <select value={form.questionCount} onChange={event => setForm({ ...form, questionCount: Number(event.target.value) })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal">
+              {[3, 5, 8, 10, 15, 20].map(value => <option key={value}>{value}</option>)}
+            </select>
+          </label>
+        </div>}
+        <div className="grid gap-5 sm:grid-cols-2">
+          <label className="text-sm font-semibold">预约时间
+            <input type="datetime-local" value={form.scheduledAt} onChange={event => setForm({ ...form, scheduledAt: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal" />
+          </label>
+          <label className="text-sm font-semibold">时长（分钟）
+            <input type="number" min="1" max="480" value={form.duration} onChange={event => setForm({ ...form, duration: Number(event.target.value) })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal" />
+          </label>
+        </div>
+      </div> : <div className="mt-7 grid gap-5">
+        <div className="rounded-[26px] border border-border bg-[var(--accent-soft)] p-5">
+          <div className="flex items-start gap-3">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-surface text-[var(--accent)]"><Users className="h-5 w-5" /></span>
+            <div>
+              <h3 className="font-bold">批量排期</h3>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">选择模板、候选人和题库后，系统会按照开始时间与间隔自动创建多场 AI 面试。</p>
+            </div>
+          </div>
+        </div>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <label className="text-sm font-semibold">面试模板
+            <select value={bulk.templateId} onChange={event => setBulk({ ...bulk, templateId: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal">
+              {templates.map(item => <option key={item.id} value={item.id}>{item.name} · {item.duration} 分钟</option>)}
+            </select>
+          </label>
+          <label className="text-sm font-semibold">面试题库
+            <select value={bulk.questionBankId} onChange={event => setBulk({ ...bulk, questionBankId: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal">
+              <option value="">选择题库</option>
+              {banks.map(item => <option key={item.id} value={item.id}>{item.name}（{item.bankCode}）</option>)}
+            </select>
+          </label>
+        </div>
+        <label className="text-sm font-semibold">候选人（可多选）
+          <select multiple value={bulk.candidateIds} onChange={event => setBulk({ ...bulk, candidateIds: Array.from(event.target.selectedOptions, option => option.value) })} className="mt-2 h-48 w-full rounded-2xl border border-border bg-background p-3 font-normal">
+            {candidates.map(item => <option key={item.id} value={item.id}>{item.realName}（{item.username}）</option>)}
+          </select>
+          <span className="mt-2 block text-xs text-muted-foreground">会按照选择顺序和间隔时间依次排期。</span>
+        </label>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <label className="text-sm font-semibold">第一场开始时间
+            <input type="datetime-local" value={bulk.scheduledAt} onChange={event => setBulk({ ...bulk, scheduledAt: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal" />
+          </label>
+          <label className="text-sm font-semibold">场次间隔（分钟）
+            <input type="number" min="10" max="240" value={bulk.interval} onChange={event => setBulk({ ...bulk, interval: Number(event.target.value) })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal" />
+          </label>
+        </div>
+        <div className="rounded-[24px] border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+          当前模板：<strong className="text-foreground">{bulkTemplate.name}</strong> · 每场 {bulkTemplate.duration} 分钟 · 随机抽取 {bulkTemplate.questionCount} 题
+        </div>
+      </div>}
+
+      <div className="mt-8 flex justify-end gap-3">
+        <Button variant="secondary" onClick={onClose}>取消</Button>
+        <Button disabled={saving} onClick={mode === 'single' ? onSingleSubmit : onBulkSubmit}>
+          {mode === 'bulk' && <ClipboardList className="h-4 w-4" />}
+          {saving ? '创建中…' : mode === 'single' ? '创建面试' : '批量创建面试'}
+        </Button>
+      </div>
+    </div>
+  </div>
+}
+
+function LegacyInterviewDialog({ saving, onClose, onSubmit, form, setForm, candidates, questions, banks, templates, applyTemplate }: { saving: boolean; onClose: () => void; onSubmit: () => void; form: FormState; setForm: (value: FormState) => void; candidates: Candidate[]; questions: Question[]; banks: QuestionBank[]; templates: Template[]; applyTemplate: (value: Template) => void }) {
   return <div className="fixed inset-0 z-50 overflow-y-auto bg-black/35 p-4 backdrop-blur-sm"><div className="mx-auto my-8 max-w-3xl rounded-[30px] bg-surface p-7 shadow-2xl"><div className="flex items-start justify-between"><div><p className="text-sm font-semibold text-[var(--accent)]">INTERVIEW BUILDER</p><h2 className="mt-1 text-2xl font-bold">创建 AI 面试</h2></div><button className="rounded-full p-2 hover:bg-muted" onClick={onClose}><X className="h-5 w-5" /></button></div><div className="mt-6 grid gap-5"><div><p className="text-sm font-semibold">面试模板</p><div className="mt-2 grid gap-2 sm:grid-cols-2">{templates.map(item => <button key={item.id} onClick={() => applyTemplate(item)} className="rounded-2xl border border-border p-3 text-left text-sm hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]"><strong>{item.name}</strong><p className="mt-1 text-xs text-muted-foreground">{item.note}</p></button>)}</div></div><label className="text-sm font-semibold">面试主题<input value={form.title} onChange={event => setForm({ ...form, title: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal outline-none focus:border-[var(--accent)]" /></label><label className="text-sm font-semibold">候选人<select value={form.candidateId} onChange={event => setForm({ ...form, candidateId: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal"><option value="">选择候选人</option>{candidates.map(item => <option value={item.id} key={item.id}>{item.realName}（{item.username}）</option>)}</select></label><div><p className="text-sm font-semibold">AI 面试官风格</p><div className="mt-2 grid gap-2 sm:grid-cols-3">{interviewerStyles.map(item => <button key={item.key} type="button" onClick={() => setForm({ ...form, interviewerStyle: item.key })} className={`rounded-2xl border p-3 text-left text-sm transition ${form.interviewerStyle === item.key ? 'border-[var(--accent)] bg-[var(--accent-soft)] shadow-sm' : 'border-border hover:border-[var(--accent)] hover:bg-muted'}`}><strong>{item.label}</strong><p className="mt-1 text-xs leading-5 text-muted-foreground">{item.description}</p></button>)}</div></div><div><p className="text-sm font-semibold">题目来源</p><div className="mt-2 flex rounded-full bg-muted p-1"><button onClick={() => setForm({ ...form, source: 'question', questionBankId: '' })} className={`flex-1 rounded-full px-3 py-2 text-sm transition ${form.source === 'question' ? 'bg-surface font-semibold shadow-sm' : 'text-muted-foreground'}`}>自定义选择题目</button><button onClick={() => setForm({ ...form, source: 'bank', questionIds: [] })} className={`flex-1 rounded-full px-3 py-2 text-sm transition ${form.source === 'bank' ? 'bg-surface font-semibold shadow-sm' : 'text-muted-foreground'}`}>选择题库抽题</button></div></div>{form.source === 'question' ? <label className="text-sm font-semibold">面试题目（可多选任意题目）<select multiple value={form.questionIds} onChange={event => setForm({ ...form, questionIds: Array.from(event.target.selectedOptions, option => option.value) })} className="mt-2 h-40 w-full rounded-2xl border border-border bg-background p-3 text-sm font-normal">{questions.map(item => <option key={item.id} value={item.id}>#{item.id} · {item.content}</option>)}</select><span className="mt-2 block text-xs text-muted-foreground">按住 Ctrl / Command 可多选。</span></label> : <div className="grid gap-5 sm:grid-cols-[1fr_150px]"><label className="text-sm font-semibold">面试题库<select value={form.questionBankId} onChange={event => setForm({ ...form, questionBankId: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal"><option value="">选择题库</option>{banks.map(item => <option key={item.id} value={item.id}>{item.name}（{item.bankCode}）</option>)}</select></label><label className="text-sm font-semibold">抽题数量<select value={form.questionCount} onChange={event => setForm({ ...form, questionCount: Number(event.target.value) })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal">{[3, 5, 8, 10, 15, 20].map(value => <option key={value}>{value}</option>)}</select></label></div>}<div className="grid gap-5 sm:grid-cols-2"><label className="text-sm font-semibold">预约时间<input type="datetime-local" value={form.scheduledAt} onChange={event => setForm({ ...form, scheduledAt: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal" /></label><label className="text-sm font-semibold">时长（分钟）<input type="number" min="1" max="480" value={form.duration} onChange={event => setForm({ ...form, duration: Number(event.target.value) })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal" /></label></div></div><div className="mt-7 flex justify-end gap-3"><Button variant="secondary" onClick={onClose}>取消</Button><Button disabled={saving} onClick={onSubmit}>{saving ? '创建中…' : '创建面试'}</Button></div></div></div>
 }
 
-function BulkDialog({ saving, onClose, onSubmit, bulk, setBulk, candidates, banks, templates }: { saving: boolean; onClose: () => void; onSubmit: () => void; bulk: BulkState; setBulk: (value: BulkState) => void; candidates: Candidate[]; banks: QuestionBank[]; templates: Template[] }) {
+function LegacyBulkDialog({ saving, onClose, onSubmit, bulk, setBulk, candidates, banks, templates }: { saving: boolean; onClose: () => void; onSubmit: () => void; bulk: BulkState; setBulk: (value: BulkState) => void; candidates: Candidate[]; banks: QuestionBank[]; templates: Template[] }) {
   return <div className="fixed inset-0 z-50 overflow-y-auto bg-black/35 p-4 backdrop-blur-sm"><div className="mx-auto my-8 max-w-3xl rounded-[30px] bg-surface p-7 shadow-2xl"><div className="flex items-start justify-between"><div><p className="text-sm font-semibold text-[var(--accent)]">BULK SCHEDULER</p><h2 className="mt-1 text-2xl font-bold">批量创建面试</h2></div><button className="rounded-full p-2 hover:bg-muted" onClick={onClose}><X className="h-5 w-5" /></button></div><div className="mt-6 grid gap-5"><label className="text-sm font-semibold">面试模板<select value={bulk.templateId} onChange={event => setBulk({ ...bulk, templateId: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal">{templates.map(item => <option key={item.id} value={item.id}>{item.name} · {item.duration} 分钟</option>)}</select></label><label className="text-sm font-semibold">面试题库<select value={bulk.questionBankId} onChange={event => setBulk({ ...bulk, questionBankId: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal"><option value="">选择题库</option>{banks.map(item => <option key={item.id} value={item.id}>{item.name}（{item.bankCode}）</option>)}</select></label><label className="text-sm font-semibold">候选人（可多选）<select multiple value={bulk.candidateIds} onChange={event => setBulk({ ...bulk, candidateIds: Array.from(event.target.selectedOptions, option => option.value) })} className="mt-2 h-44 w-full rounded-2xl border border-border bg-background p-3 font-normal">{candidates.map(item => <option key={item.id} value={item.id}>{item.realName}（{item.username}）</option>)}</select><span className="mt-2 block text-xs text-muted-foreground">会按照选择顺序和间隔时间依次排期。</span></label><div className="grid gap-5 sm:grid-cols-2"><label className="text-sm font-semibold">第一场开始时间<input type="datetime-local" value={bulk.scheduledAt} onChange={event => setBulk({ ...bulk, scheduledAt: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal" /></label><label className="text-sm font-semibold">场次间隔（分钟）<input type="number" min="10" max="240" value={bulk.interval} onChange={event => setBulk({ ...bulk, interval: Number(event.target.value) })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal" /></label></div></div><div className="mt-7 flex justify-end gap-3"><Button variant="secondary" onClick={onClose}>取消</Button><Button disabled={saving} onClick={onSubmit}><ClipboardList className="h-4 w-4" />{saving ? '创建中…' : '批量创建'}</Button></div></div></div>
 }
