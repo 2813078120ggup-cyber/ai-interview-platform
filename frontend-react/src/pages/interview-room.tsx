@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, Camera, ChevronLeft, ChevronRight, Mic, Send, Sparkles, Square, Volume2, VolumeX } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, Camera, ChevronLeft, ChevronRight, Mic, Send, Sparkles, Square, Volume2, VolumeX } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
@@ -48,6 +48,7 @@ export function InterviewRoom() {
   const [tts, setTts] = useState(true)
   const [cameraOn, setCameraOn] = useState(false)
   const [listening, setListening] = useState(false)
+  const [finishDialogOpen, setFinishDialogOpen] = useState(false)
   const [limits, setLimits] = useState<Record<string, number>>({})
   const video = useRef<HTMLVideoElement>(null)
   const stream = useRef<MediaStream | null>(null)
@@ -220,7 +221,6 @@ export function InterviewRoom() {
   }
 
   async function finish() {
-    if (!window.confirm('确定结束本次面试吗？结束后将自动生成评分与报告。')) return
     setThinking(true)
     try {
       await request('/v1/interviews/' + id + '/end', { method: 'POST' })
@@ -229,7 +229,7 @@ export function InterviewRoom() {
       navigate('/candidate/interviews/' + id + '/report')
     }
     catch (reason) { setError(reason instanceof Error ? reason.message : '结束面试失败') }
-    finally { setThinking(false) }
+    finally { setThinking(false); setFinishDialogOpen(false) }
   }
 
   async function camera() {
@@ -246,7 +246,7 @@ export function InterviewRoom() {
   return <div className="space-y-5">
     <header className="flex flex-col gap-4 rounded-[24px] border border-border bg-surface px-5 py-5 shadow-sm lg:flex-row lg:items-center lg:justify-between">
       <div><button onClick={() => navigate('/candidate/interviews')} className="mb-2 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />返回面试大厅</button><h1 className="text-xl font-bold lg:text-2xl">{interview.title}</h1><p className="mt-1 text-sm text-muted-foreground">#{id} · AI 对话式面试</p></div>
-      <div className="flex items-center gap-3"><div className="rounded-2xl bg-muted px-4 py-2 text-right"><p className="text-xs text-muted-foreground">{finished ? '面试已结束' : '剩余时间'}</p><p className="font-mono text-xl font-bold">{finished ? '--:--' : remainingText(seconds)}</p></div>{!finished && <Button variant="danger" disabled={thinking} onClick={() => void finish()}><Square className="h-4 w-4" />结束面试</Button>}</div>
+      <div className="flex items-center gap-3"><div className="rounded-2xl bg-muted px-4 py-2 text-right"><p className="text-xs text-muted-foreground">{finished ? '面试已结束' : '剩余时间'}</p><p className="font-mono text-xl font-bold">{finished ? '--:--' : remainingText(seconds)}</p></div>{!finished && <Button variant="danger" disabled={thinking} onClick={() => setFinishDialogOpen(true)}><Square className="h-4 w-4" />结束面试</Button>}</div>
     </header>
     {error && <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>}
     <div className="grid gap-5 xl:grid-cols-[240px_minmax(0,1fr)_310px]">
@@ -263,5 +263,24 @@ export function InterviewRoom() {
         <Card><div className="flex items-center justify-between"><div><p className="font-semibold">我的画面</p><p className="mt-1 text-xs text-muted-foreground">仅本地预览</p></div><Button variant="secondary" className="h-9 px-3" onClick={() => void camera()}><Camera className="h-4 w-4" />{cameraOn ? '关闭' : '开启'}</Button></div><div className="relative mt-4 grid aspect-video place-items-center overflow-hidden rounded-2xl bg-muted"><video ref={video} autoPlay muted playsInline className={'h-full w-full object-cover ' + (cameraOn ? 'block -scale-x-100' : 'hidden')} />{!cameraOn && <div className="text-center text-muted-foreground"><Camera className="mx-auto h-6 w-6" /><p className="mt-2 text-xs">尚未开启摄像头</p></div>}</div>{!window.isSecureContext && <p className="mt-3 text-xs leading-5 text-amber-700">当前 HTTP 连接不允许浏览器调用摄像头与语音识别；生产环境请配置 HTTPS。</p>}</Card>
       </div>
     </div>
+    {finishDialogOpen && <div className="fixed inset-0 z-[70] grid place-items-center bg-black/35 p-4 backdrop-blur-md" role="dialog" aria-modal="true" aria-labelledby="finish-dialog-title">
+      <motion.div initial={{ opacity: 0, scale: .96, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: .96, y: 12 }} transition={{ duration: .2, ease: 'easeOut' }} className="w-full max-w-md overflow-hidden rounded-[30px] border border-border bg-surface shadow-[0_28px_90px_rgba(20,18,17,.22)]">
+        <div className="soft-emphasis-panel rounded-none border-0 p-6 shadow-none">
+          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-rose-50 text-rose-700 shadow-sm dark:bg-rose-950/30 dark:text-rose-200"><AlertTriangle className="h-6 w-6" /></span>
+          <h2 id="finish-dialog-title" className="mt-5 text-2xl font-bold">确认结束本次面试？</h2>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">结束后系统会锁定当前答题记录，并自动生成 AI 评分与面试报告。</p>
+        </div>
+        <div className="space-y-3 p-6">
+          <div className="rounded-2xl border border-border bg-background/70 p-4 text-sm text-muted-foreground">
+            <p><span className="font-semibold text-foreground">当前进度：</span>{active + 1}/{questions.length} 题</p>
+            <p className="mt-1"><span className="font-semibold text-foreground">剩余时间：</span>{remainingText(seconds)}</p>
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="secondary" disabled={thinking} onClick={() => setFinishDialogOpen(false)}>继续作答</Button>
+            <Button variant="danger" disabled={thinking} onClick={() => void finish()}><Square className="h-4 w-4" />{thinking ? '生成中…' : '确认结束'}</Button>
+          </div>
+        </div>
+      </motion.div>
+    </div>}
   </div>
 }
