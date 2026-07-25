@@ -75,7 +75,7 @@ export function InterviewRoom() {
   const speechToken = useRef(0)
 
   const question = questions[active]
-  const finished = interview?.status === 2
+  const finished = interview?.status === 2 || interview?.status === 4
   const choiceQuestion = choiceTypes.includes(question?.questionType ?? '')
   const options = useMemo(() => safeJson<Array<{ key: string; text: string }>>(question?.options, []), [question?.options])
   const followUps = messages.filter(item => item.role === 'assistant').length

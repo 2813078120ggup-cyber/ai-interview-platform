@@ -12,6 +12,7 @@ const labels: Record<number, string> = {
   1: '进行中',
   2: '已结束',
   3: '已取消',
+  4: '已通过',
 }
 
 export function CandidateLobby() {
@@ -91,6 +92,7 @@ export function CandidateLobby() {
           <option value="0">待开始</option>
           <option value="1">进行中</option>
           <option value="2">已结束</option>
+          <option value="4">已通过</option>
         </select>
       </div>
 
@@ -115,7 +117,7 @@ export function CandidateLobby() {
           </p>
           <div className="mt-6 flex justify-between">
             <span className="text-xs text-muted-foreground">#{item.id}</span>
-            {item.status === 2
+            {item.status === 2 || item.status === 4
               ? <Button variant="secondary" onClick={() => nav(`/candidate/interviews/${item.id}/report`)}>查看报告</Button>
               : <Button disabled={item.status === 3} onClick={() => enter(item)}><Play className="h-4 w-4" />{item.status === 1 ? '继续面试' : '开始面试'}</Button>}
           </div>

@@ -20,3 +20,7 @@ export function recordAuditLog(input: Omit<AuditLog, 'id' | 'createdAt'>) {
   localStorage.setItem(storageKey, JSON.stringify([next, ...listAuditLogs()].slice(0, 200)))
   return next
 }
+
+export function clearAuditLogs() {
+  localStorage.removeItem(storageKey)
+}

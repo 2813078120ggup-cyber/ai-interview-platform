@@ -1,11 +1,13 @@
 import {
   Bell,
+  CheckCircle2,
   ClipboardList,
   Eye,
   FileText,
   Layers3,
   Plus,
   Search,
+  Trash2,
   Users,
   X,
 } from 'lucide-react'
@@ -50,8 +52,8 @@ type Template = { id: string; name: string; title: string; type: string; duratio
 type FormState = { title: string; candidateId: string; scheduledAt: string; duration: number; type: string; source: 'question' | 'bank'; questionIds: string[]; questionBankId: string; questionCount: number }
 type BulkState = { templateId: string; candidateIds: string[]; scheduledAt: string; interval: number; questionBankId: string }
 
-const statusText: Record<number, string> = { 0: '待开始', 1: '进行中', 2: '已结束', 3: '已取消' }
-const statusTone = (status: number): 'default' | 'success' | 'warning' | 'danger' | 'info' => status === 1 ? 'success' : status === 0 ? 'info' : status === 2 ? 'default' : 'warning'
+const statusText: Record<number, string> = { 0: '待开始', 1: '进行中', 2: '已结束', 3: '已取消', 4: '已通过' }
+const statusTone = (status: number): 'default' | 'success' | 'warning' | 'danger' | 'info' => status === 4 ? 'success' : status === 1 ? 'success' : status === 0 ? 'info' : status === 2 ? 'default' : status === 3 ? 'warning' : 'default'
 const localInput = () => { const date = new Date(Date.now() + 10 * 60_000); date.setSeconds(0, 0); return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}` }
 const toBackendTime = (value: string) => value.length === 16 ? `${value}:00` : value
 const dateText = (value?: string) => value?.replace('T', ' ').slice(0, 16) || '-'
@@ -78,11 +80,13 @@ export function AdminInterviews() {
   const [dialog, setDialog] = useState(false)
   const [bulkDialog, setBulkDialog] = useState(false)
   const [noticeTarget, setNoticeTarget] = useState<InterviewRow>()
+  const [actionTarget, setActionTarget] = useState<{ type: 'pass' | 'delete'; interview: InterviewRow }>()
   const [selectedReport, setSelectedReport] = useState<ReportItem>()
   const [reportDetail, setReportDetail] = useState<ReportDetail>()
   const [reportLoading, setReportLoading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [actionBusy, setActionBusy] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState<FormState>(defaultForm)
   const [bulk, setBulk] = useState<BulkState>(defaultBulk)
@@ -188,6 +192,40 @@ export function AdminInterviews() {
     }
   }
 
+  async function confirmInterviewAction() {
+    if (!actionTarget) return
+    setActionBusy(true)
+    try {
+      const { type, interview } = actionTarget
+      if (type === 'pass') {
+        await request(`/v1/interviews/${interview.id}/pass`, { method: 'POST' })
+        const person = candidateById.get(String(interview.candidateId))
+        recordAuditLog({
+          module: '面试管理',
+          action: '通过面试',
+          operator: profile()?.realName ?? '管理员',
+          target: interview.title,
+          detail: `将 ${person?.realName ?? interview.candidateId} 的面试标记为已通过`,
+        })
+      } else {
+        await request(`/v1/interviews/${interview.id}`, { method: 'DELETE' })
+        recordAuditLog({
+          module: '面试管理',
+          action: '删除面试',
+          operator: profile()?.realName ?? '管理员',
+          target: interview.title,
+          detail: `删除面试安排：${interview.title}`,
+        })
+      }
+      setActionTarget(undefined)
+      await load()
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : '操作失败，请稍后重试')
+    } finally {
+      setActionBusy(false)
+    }
+  }
+
   return <div className="mx-auto max-w-7xl p-6 lg:p-10">
     <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
       <div>
@@ -234,10 +272,11 @@ export function AdminInterviews() {
           <option value="1">进行中</option>
           <option value="2">已结束</option>
           <option value="3">已取消</option>
+          <option value="4">已通过</option>
         </select>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[980px] text-left text-sm">
+        <table className="w-full min-w-[1220px] text-left text-sm">
           <thead className="border-b border-border bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
               <th className="px-5 py-4">面试主题</th>
@@ -261,13 +300,15 @@ export function AdminInterviews() {
                 <td className="px-5 py-5 text-muted-foreground">{dateText(item.scheduledAt)}</td>
                 <td className="px-5 py-5"><Badge tone={statusTone(item.status)}>{statusText[item.status]}</Badge></td>
                 <td className="px-5 py-5">
-                  {report ? <Badge tone="success">已生成 · {report.totalScore} 分</Badge> : item.status === 2 ? <Badge tone="warning">生成中</Badge> : <span className="text-xs text-muted-foreground">面试结束后生成</span>}
+                  {report ? <Badge tone="success">已生成 · {report.totalScore} 分</Badge> : (item.status === 2 || item.status === 4) ? <Badge tone="warning">生成中</Badge> : <span className="text-xs text-muted-foreground">面试结束后生成</span>}
                 </td>
-                <td className="px-5 py-5">
-                  <div className="flex justify-end gap-2">
-                    <Button variant="secondary" className="h-9 px-3" onClick={() => setNoticeTarget(item)}><Bell className="h-4 w-4" />通知</Button>
-                    <Button variant="secondary" className="h-9 px-3" onClick={() => nav(`/admin/interviews/${item.id}/review`)}><Eye className="h-4 w-4" />回顾</Button>
-                    {report && <Button className="h-9 px-3" onClick={() => void openReport(report)}><FileText className="h-4 w-4" />查看报告</Button>}
+                <td className="px-5 py-5 align-middle">
+                  <div className="grid grid-cols-[88px_88px_88px_88px_118px] justify-end gap-2">
+                    <Button variant="secondary" className="h-9 w-full px-3" onClick={() => setNoticeTarget(item)}><Bell className="h-4 w-4" />通知</Button>
+                    <Button variant="secondary" className="h-9 w-full px-3" onClick={() => nav(`/admin/interviews/${item.id}/review`)}><Eye className="h-4 w-4" />回顾</Button>
+                    {item.status !== 3 && item.status !== 4 ? <Button variant="secondary" className="h-9 w-full px-3" onClick={() => setActionTarget({ type: 'pass', interview: item })}><CheckCircle2 className="h-4 w-4" />通过</Button> : <span aria-hidden="true" />}
+                    <Button variant="danger" className="h-9 w-full px-3 bg-rose-50 text-rose-600 shadow-none hover:bg-rose-100" onClick={() => setActionTarget({ type: 'delete', interview: item })}><Trash2 className="h-4 w-4" />删除</Button>
+                    {report ? <Button className="h-9 w-full px-3" onClick={() => void openReport(report)}><FileText className="h-4 w-4" />查看报告</Button> : <span aria-hidden="true" />}
                   </div>
                 </td>
               </tr>
@@ -280,7 +321,40 @@ export function AdminInterviews() {
     {dialog && <InterviewDialog saving={saving} onClose={() => setDialog(false)} onSubmit={create} form={form} setForm={setForm} candidates={candidates} questions={questions} banks={banks} templates={templates} applyTemplate={applyTemplate} />}
     {bulkDialog && <BulkDialog saving={saving} onClose={() => setBulkDialog(false)} onSubmit={createBulk} bulk={bulk} setBulk={setBulk} candidates={candidates} banks={banks} templates={templates} />}
     {noticeTarget && <NotificationDialog interview={noticeTarget} candidate={candidateById.get(String(noticeTarget.candidateId))} onClose={() => setNoticeTarget(undefined)} />}
+    {actionTarget && <InterviewActionDialog target={actionTarget} candidate={candidateById.get(String(actionTarget.interview.candidateId))} busy={actionBusy} onClose={() => setActionTarget(undefined)} onConfirm={confirmInterviewAction} />}
     {selectedReport && <ReportDialog report={selectedReport} detail={reportDetail} loading={reportLoading} onClose={() => { setSelectedReport(undefined); setReportDetail(undefined) }} />}
+  </div>
+}
+
+function InterviewActionDialog({ target, candidate, busy, onClose, onConfirm }: { target: { type: 'pass' | 'delete'; interview: InterviewRow }; candidate?: Candidate; busy: boolean; onClose: () => void; onConfirm: () => void }) {
+  const isDelete = target.type === 'delete'
+  return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4 backdrop-blur-sm">
+    <div className="w-full max-w-lg rounded-[32px] border border-border bg-surface p-7 shadow-2xl">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-semibold text-[var(--accent)]">{isDelete ? 'DELETE INTERVIEW' : 'PASS INTERVIEW'}</p>
+          <h2 className="mt-2 text-2xl font-black">{isDelete ? '确认删除这场面试？' : '确认标记为已通过？'}</h2>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            {isDelete
+              ? '删除后会同步移除该面试的题目快照、回答和关联评测数据，此操作不可恢复。'
+              : '系统会把面试状态更新为已通过；如果面试还没有结束，会同时写入当前结束时间。'}
+          </p>
+        </div>
+        <button className="rounded-full p-2 hover:bg-muted" onClick={onClose}><X className="h-5 w-5" /></button>
+      </div>
+      <div className="mt-6 rounded-3xl border border-border bg-muted/30 p-4">
+        <p className="text-xs font-semibold uppercase tracking-[.18em] text-muted-foreground">Interview</p>
+        <p className="mt-2 font-bold">{target.interview.title}</p>
+        <p className="mt-1 text-sm text-muted-foreground">候选人：{candidate?.realName ?? target.interview.candidateId} · 预约时间：{dateText(target.interview.scheduledAt)}</p>
+      </div>
+      <div className="mt-7 flex justify-end gap-3">
+        <Button variant="secondary" onClick={onClose} disabled={busy}>取消</Button>
+        <Button variant={isDelete ? 'danger' : 'primary'} onClick={onConfirm} disabled={busy}>
+          {isDelete ? <Trash2 className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+          {busy ? '处理中…' : isDelete ? '确认删除' : '标记通过'}
+        </Button>
+      </div>
+    </div>
   </div>
 }
 

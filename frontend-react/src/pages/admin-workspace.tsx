@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { request, type Interview } from '@/lib/api'
 
-const status: Record<number, readonly [string, 'info' | 'success' | 'default' | 'warning']> = { 0: ['待开始', 'info'], 1: ['进行中', 'success'], 2: ['已结束', 'default'], 3: ['已取消', 'warning'] }
+const status: Record<number, readonly [string, 'info' | 'success' | 'default' | 'warning']> = { 0: ['待开始', 'info'], 1: ['进行中', 'success'], 2: ['已结束', 'default'], 3: ['已取消', 'warning'], 4: ['已通过', 'success'] }
 
 export function AdminWorkspace() {
   const [items, setItems] = useState<Interview[]>([])
@@ -16,7 +16,7 @@ export function AdminWorkspace() {
     ['全部面试', items.length, CalendarDays],
     ['待开始', items.filter(item => item.status === 0).length, ClipboardCheck],
     ['进行中', items.filter(item => item.status === 1).length, PlayCircle],
-    ['已完成', items.filter(item => item.status === 2).length, FileText],
+    ['已完成', items.filter(item => item.status === 2 || item.status === 4).length, FileText],
   ], [items])
   const recent = useMemo(() => [...items].sort((a, b) => b.scheduledAt.localeCompare(a.scheduledAt)).slice(0, 6), [items])
   return <div className="p-5 lg:p-8">

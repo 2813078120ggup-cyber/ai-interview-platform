@@ -147,7 +147,7 @@ public class InterviewService {
         long pageSize = query.pageSize() == null ? 20 : Math.min(100, Math.max(1, query.pageSize()));
         LambdaQueryWrapper<Interview> wrapper = new LambdaQueryWrapper<Interview>().orderByDesc(Interview::getScheduledAt);
         if (query.status() != null) {
-            if (query.status() < Interview.PENDING || query.status() > Interview.CANCELLED) throw BusinessException.badRequest("面试状态不合法");
+            if (query.status() < Interview.PENDING || query.status() > Interview.PASSED) throw BusinessException.badRequest("面试状态不合法");
             wrapper.eq(Interview::getStatus, query.status());
         }
         if (query.positionId() != null) wrapper.eq(Interview::getPositionId, query.positionId());
@@ -195,6 +195,31 @@ public class InterviewService {
                 .eq(Interview::getStatus, Interview.PENDING)) == 0) {
             throw BusinessException.badRequest("面试状态已变更，请刷新后重试");
         }
+    }
+
+    @Transactional
+    public Interview pass(Long id) {
+        requireManager();
+        Interview interview = requireInterview(id);
+        if (interview.getStatus() == Interview.CANCELLED) {
+            throw BusinessException.badRequest("已取消面试不能标记通过");
+        }
+        if (interview.getStatus() == Interview.PASSED) {
+            return interview;
+        }
+        interview.setStatus(Interview.PASSED);
+        if (interview.getEndedAt() == null) {
+            interview.setEndedAt(LocalDateTime.now());
+        }
+        interviewMapper.updateById(interview);
+        return interview;
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        requireManager();
+        Interview interview = requireInterview(id);
+        interviewMapper.deleteById(interview.getId());
     }
 
     @Transactional

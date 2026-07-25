@@ -67,6 +67,17 @@ public class InterviewController {
         return ApiResponse.ok();
     }
 
+    @PostMapping("/{id}/pass")
+    public ApiResponse<Interview> pass(@PathVariable Long id) {
+        return ApiResponse.ok(service.pass(id));
+    }
+
+    @DeleteMapping("/{id}")
+    public ApiResponse<Void> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ApiResponse.ok();
+    }
+
     @PostMapping("/{id}/start")
     public ApiResponse<Interview> start(@PathVariable Long id) {
         return ApiResponse.ok(service.start(id));
