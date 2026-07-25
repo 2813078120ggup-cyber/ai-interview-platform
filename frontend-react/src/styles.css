@@ -835,4 +835,255 @@ button:disabled { cursor: not-allowed; }
   html.print-report-mode .border-border {
     border-color: #dfdbd1 !important;
   }
+
+  html.print-report-mode .report-screen-root {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  html.print-report-mode .report-paper-root {
+    display: flex !important;
+    visibility: visible !important;
+    box-sizing: border-box !important;
+    width: 198mm !important;
+    min-height: 285mm !important;
+    margin: 0 auto !important;
+    padding: 12mm 13mm !important;
+    flex-direction: column !important;
+    gap: 5.5mm !important;
+    border: 1px solid #ddd7cc !important;
+    border-radius: 0 !important;
+    background: #fffdfa !important;
+    color: #151412 !important;
+    font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif !important;
+    font-size: 9.5pt !important;
+    line-height: 1.45 !important;
+    box-shadow: none !important;
+    page-break-after: avoid !important;
+  }
+
+  html.print-report-mode .report-paper-root,
+  html.print-report-mode .report-paper-root * {
+    visibility: visible !important;
+    color: #151412 !important;
+  }
+
+  html.print-report-mode .report-paper-cover {
+    display: grid !important;
+    grid-template-columns: 1fr 30mm !important;
+    align-items: start !important;
+    gap: 10mm !important;
+    padding-bottom: 6mm !important;
+    border-bottom: 1.5px solid #151412 !important;
+  }
+
+  html.print-report-mode .report-paper-eyebrow {
+    margin: 0 !important;
+    color: #9b6847 !important;
+    font-size: 7pt !important;
+    font-weight: 800 !important;
+    letter-spacing: .22em !important;
+    text-transform: uppercase !important;
+  }
+
+  html.print-report-mode .report-paper-cover h1 {
+    margin: 2mm 0 0 !important;
+    max-width: 132mm !important;
+    color: #151412 !important;
+    font-size: 20pt !important;
+    font-weight: 900 !important;
+    line-height: 1.12 !important;
+    letter-spacing: -.03em !important;
+  }
+
+  html.print-report-mode .report-paper-meta {
+    margin: 2.5mm 0 0 !important;
+    color: #68645d !important;
+    font-size: 8.5pt !important;
+  }
+
+  html.print-report-mode .report-paper-score {
+    display: grid !important;
+    width: 28mm !important;
+    height: 28mm !important;
+    place-items: center !important;
+    align-content: center !important;
+    border: 1.5px solid #151412 !important;
+    border-radius: 50% !important;
+    background: #f3eadf !important;
+    text-align: center !important;
+  }
+
+  html.print-report-mode .report-paper-score strong {
+    display: block !important;
+    font-size: 20pt !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+  }
+
+  html.print-report-mode .report-paper-score span {
+    margin-top: 1mm !important;
+    color: #68645d !important;
+    font-size: 6.5pt !important;
+  }
+
+  html.print-report-mode .report-paper-summary,
+  html.print-report-mode .report-paper-section,
+  html.print-report-mode .report-paper-takeaways article {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    border: 1px solid #ddd7cc !important;
+    background: #fff !important;
+  }
+
+  html.print-report-mode .report-paper-summary {
+    display: grid !important;
+    grid-template-columns: 43mm 1fr !important;
+    gap: 6mm !important;
+    padding: 5mm !important;
+  }
+
+  html.print-report-mode .report-paper-label,
+  html.print-report-mode .report-paper-section-title p {
+    margin: 0 !important;
+    color: #9b6847 !important;
+    font-size: 7pt !important;
+    font-weight: 900 !important;
+    letter-spacing: .16em !important;
+    text-transform: uppercase !important;
+  }
+
+  html.print-report-mode .report-paper-summary h2 {
+    margin: 2mm 0 0 !important;
+    font-size: 13pt !important;
+    font-weight: 900 !important;
+    line-height: 1.2 !important;
+  }
+
+  html.print-report-mode .report-paper-summary > p {
+    margin: 0 !important;
+    color: #4d4943 !important;
+    font-size: 9pt !important;
+    line-height: 1.55 !important;
+  }
+
+  html.print-report-mode .report-paper-section {
+    padding: 4.5mm 5mm !important;
+  }
+
+  html.print-report-mode .report-paper-section-title {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 6mm !important;
+    margin-bottom: 3.5mm !important;
+  }
+
+  html.print-report-mode .report-paper-section-title span {
+    color: #7a7770 !important;
+    font-size: 8pt !important;
+  }
+
+  html.print-report-mode .report-paper-score-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 8.4pt !important;
+  }
+
+  html.print-report-mode .report-paper-score-table th {
+    padding: 2.5mm 2mm !important;
+    border-bottom: 1px solid #151412 !important;
+    color: #68645d !important;
+    font-size: 7pt !important;
+    font-weight: 800 !important;
+    letter-spacing: .08em !important;
+    text-align: left !important;
+  }
+
+  html.print-report-mode .report-paper-score-table td {
+    padding: 3mm 2mm !important;
+    border-bottom: 1px solid #ece8df !important;
+    color: #35312d !important;
+    vertical-align: top !important;
+  }
+
+  html.print-report-mode .report-paper-score-table td:nth-child(2),
+  html.print-report-mode .report-paper-score-table td:nth-child(3) {
+    width: 22mm !important;
+    white-space: nowrap !important;
+  }
+
+  html.print-report-mode .report-paper-score-table strong {
+    font-size: 12pt !important;
+    font-weight: 900 !important;
+  }
+
+  html.print-report-mode .report-paper-bars {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 4mm 7mm !important;
+  }
+
+  html.print-report-mode .report-paper-bar > div {
+    display: flex !important;
+    justify-content: space-between !important;
+    margin-bottom: 1.5mm !important;
+    color: #35312d !important;
+    font-size: 8.5pt !important;
+  }
+
+  html.print-report-mode .report-paper-bar strong {
+    font-size: 9pt !important;
+    font-weight: 900 !important;
+  }
+
+  html.print-report-mode .report-paper-bar i {
+    display: block !important;
+    height: 2.2mm !important;
+    overflow: hidden !important;
+    border-radius: 99px !important;
+    background: #ece8df !important;
+  }
+
+  html.print-report-mode .report-paper-bar b {
+    display: block !important;
+    height: 100% !important;
+    border-radius: inherit !important;
+    background: #151412 !important;
+  }
+
+  html.print-report-mode .report-paper-takeaways {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 4mm !important;
+  }
+
+  html.print-report-mode .report-paper-takeaways article {
+    padding: 4mm !important;
+  }
+
+  html.print-report-mode .report-paper-takeaways h3 {
+    margin: 0 0 2mm !important;
+    color: #9b6847 !important;
+    font-size: 9pt !important;
+    font-weight: 900 !important;
+  }
+
+  html.print-report-mode .report-paper-takeaways p {
+    margin: 0 !important;
+    color: #4d4943 !important;
+    font-size: 8pt !important;
+    line-height: 1.48 !important;
+  }
+
+  html.print-report-mode .report-paper-footer {
+    display: flex !important;
+    justify-content: space-between !important;
+    gap: 8mm !important;
+    margin-top: auto !important;
+    padding-top: 4mm !important;
+    border-top: 1px solid #ddd7cc !important;
+    color: #8a857c !important;
+    font-size: 7pt !important;
+  }
 }

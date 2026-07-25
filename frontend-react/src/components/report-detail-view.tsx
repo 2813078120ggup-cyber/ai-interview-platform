@@ -26,6 +26,14 @@ const dimensions: Array<[keyof ReportDetailData, string, string]> = [
   ['adaptabilityScore', '应变能力', '追问场景下的临场反应与调整能力'],
 ]
 
+function scoreLevel(score: number) {
+  if (score >= 90) return '优秀'
+  if (score >= 80) return '良好'
+  if (score >= 70) return '达标'
+  if (score >= 60) return '待加强'
+  return '需重点提升'
+}
+
 type ReportDetailViewProps = {
   report: ReportDetailData
   title: string
@@ -58,12 +66,94 @@ export function ReportDetailView({
 
   return (
     <div data-print-root className="report-print-root mx-auto max-w-6xl space-y-6">
-      <div className="print-only mb-6 border-b border-[#ddd7cc] pb-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9b6847]">InterviewOS Assessment Report</p>
-        <h1 className="mt-2 text-2xl font-bold">{title}</h1>
-        {meta && <p className="mt-1 text-sm text-[#7a7770]">{meta}</p>}
-      </div>
+      <article className="report-paper-root print-only">
+        <section className="report-paper-cover">
+          <div>
+            <p className="report-paper-eyebrow">InterviewOS Assessment Report</p>
+            <h1>{title}</h1>
+            {meta && <p className="report-paper-meta">{meta}</p>}
+          </div>
+          <div className="report-paper-score">
+            <strong>{report.totalScore}</strong>
+            <span>综合得分 / 100</span>
+          </div>
+        </section>
 
+        <section className="report-paper-summary">
+          <div>
+            <p className="report-paper-label">综合结论</p>
+            <h2>{scoreLevel(report.totalScore)} · {heading}</h2>
+          </div>
+          <p>{report.summary}</p>
+        </section>
+
+        <section className="report-paper-section">
+          <div className="report-paper-section-title">
+            <p>能力评分</p>
+            <span>按四项核心能力维度统计</span>
+          </div>
+          <table className="report-paper-score-table">
+            <thead>
+              <tr>
+                <th>维度</th>
+                <th>得分</th>
+                <th>等级</th>
+                <th>说明</th>
+              </tr>
+            </thead>
+            <tbody>
+              {dimensions.map(([key, label, note]) => (
+                <tr key={key}>
+                  <td>{label}</td>
+                  <td><strong>{report[key]}</strong></td>
+                  <td>{scoreLevel(Number(report[key]))}</td>
+                  <td>{note}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+
+        <section className="report-paper-section">
+          <div className="report-paper-section-title">
+            <p>能力画像</p>
+            <span>平均分 {average}</span>
+          </div>
+          <div className="report-paper-bars">
+            {dimensions.map(([key, label]) => (
+              <div className="report-paper-bar" key={key}>
+                <div>
+                  <span>{label}</span>
+                  <strong>{report[key]}</strong>
+                </div>
+                <i><b style={{ width: `${report[key]}%` }} /></i>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="report-paper-takeaways">
+          <article>
+            <h3>优势表现</h3>
+            <p>{report.strengths}</p>
+          </article>
+          <article>
+            <h3>待提升项</h3>
+            <p>{report.weaknesses}</p>
+          </article>
+          <article>
+            <h3>行动建议</h3>
+            <p>{report.improvementSuggestions}</p>
+          </article>
+        </section>
+
+        <footer className="report-paper-footer">
+          <span>InterviewOS AI 多模态智能模拟面试评测平台</span>
+          <span>本报告由系统自动生成，仅用于学习评估与面试复盘。</span>
+        </footer>
+      </article>
+
+      <div className="report-screen-root space-y-6">
       <header className="no-print flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           {onBack && (
@@ -173,6 +263,7 @@ export function ReportDetailView({
             </article>
           </div>
         </Card>
+      </div>
       </div>
     </div>
   )
