@@ -167,17 +167,17 @@ export function LoginPage() {
             ))}
           </div>
 
-          <div className="relative z-10 flex items-center gap-3">
-            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#151412] text-white shadow-[0_18px_48px_rgba(20,18,17,.18)]">
+          <div className="relative z-10 flex items-center gap-4">
+            <span className="grid h-12 w-12 place-items-center rounded-[18px] bg-[#151412] text-white shadow-[0_18px_48px_rgba(20,18,17,.16)]">
               <Bot className="h-5 w-5" />
             </span>
             <div>
-              <strong className="text-lg leading-none">InterviewOS</strong>
-              <p className="mt-1 text-xs text-muted-foreground">AI 多模态模拟面试评测平台</p>
+              <strong className="text-xl leading-none tracking-[-0.03em]">InterviewOS</strong>
+              <p className="mt-1.5 text-sm text-muted-foreground">AI 多模态模拟面试评测平台</p>
             </div>
           </div>
 
-          <div className="relative z-10 my-10 max-w-[460px]">
+          <div className="relative z-10 my-10 max-w-[620px]">
             <motion.p
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -190,16 +190,16 @@ export function LoginPage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.18, duration: 0.48 }}
-              className="mt-5 max-w-[520px] text-[clamp(2.35rem,4vw,4.15rem)] font-black leading-[1.03] tracking-[-0.045em]"
+              className="login-hero-title mt-5 max-w-[620px] text-[clamp(2.65rem,3.58vw,4.35rem)] font-black leading-[1.02] tracking-[-0.055em]"
             >
-              把每一次模拟面试，
-              <span className="block">变成下一次的底气。</span>
+              每一次模拟面试，
+              <span className="block">都成为下一次的底气。</span>
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.25, duration: 0.45 }}
-              className="mt-6 max-w-md text-base leading-8 text-muted-foreground"
+              className="mt-6 max-w-[540px] text-base leading-8 text-muted-foreground"
             >
               AI 面试官追问、语音作答、能力画像和成长报告，帮助候选人把准备过程变得清晰可复盘。
             </motion.p>

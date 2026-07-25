@@ -177,6 +177,15 @@ button:disabled { cursor: not-allowed; }
   transform-style: preserve-3d;
 }
 
+.login-hero-title {
+  text-wrap: balance;
+  font-feature-settings: "kern";
+}
+
+.login-hero-title span {
+  letter-spacing: -0.06em;
+}
+
 .login-particle-layer {
   pointer-events: none;
 }
