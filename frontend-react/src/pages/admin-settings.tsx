@@ -147,6 +147,26 @@ function maskSecret(value: string) {
   return `${value.slice(0, 4)}****${value.slice(-4)}`
 }
 
+function canBeTextDefault(item: Provider) {
+  return item.kind === 'llm'
+}
+
+function canBeVoiceDefault(item: Provider) {
+  return item.kind === 'virtual-human' || item.kind === 'speech' || item.kind === 'asr' || item.kind === 'tts'
+}
+
+function canTestProvider(item: Provider) {
+  if (!item.enabled) return false
+  if (item.kind === 'speech') return true
+  return Boolean(item.baseUrl.trim()) && item.baseUrl !== '待配置'
+}
+
+function defaultDeleteReason(item: Provider) {
+  if (item.textDefault) return '当前是文字默认 Provider，请先切换默认项后再删除。'
+  if (item.voiceDefault) return '当前是语音默认 Provider，请先切换默认项后再删除。'
+  return ''
+}
+
 function Field({ label, value, secret = false }: { label: string; value: string; secret?: boolean }) {
   const [visible, setVisible] = useState(false)
   return <div className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-background/60 px-4 py-3 text-sm">
@@ -265,6 +285,10 @@ export function AdminSettings() {
           {providers.map((item, index) => {
             const meta = kindMap[item.kind]
             const Icon = meta.icon
+            const supportsTextDefault = canBeTextDefault(item)
+            const supportsVoiceDefault = canBeVoiceDefault(item)
+            const testable = canTestProvider(item)
+            const deleteReason = defaultDeleteReason(item)
             return <Card key={item.id} motionDelay={index * .04} className="p-0">
               <div className="flex items-start justify-between gap-4 p-5">
                 <div className="flex min-w-0 items-center gap-3">
@@ -294,13 +318,41 @@ export function AdminSettings() {
 
               <div className="p-5">
                 <p className="min-h-10 text-sm leading-6 text-muted-foreground">{item.remark || '暂无说明。'}</p>
-                <div className="mt-5 flex flex-wrap gap-2">
+                <div className="mt-5 flex flex-wrap items-center gap-2">
                   <Button variant="secondary" className="h-10 px-4" onClick={() => setEditing(item)}><Edit3 className="h-4 w-4" />编辑</Button>
-                  <Button variant="secondary" className="h-10 px-4" onClick={() => testProvider(item)}><Radio className="h-4 w-4" />测试</Button>
-                  <Button variant="secondary" className="h-10 px-4" onClick={() => patch(item.id, current => ({ ...current, enabled: !current.enabled }), item.enabled ? '停用配置' : '启用配置')}>{item.enabled ? '停用' : '启用'}</Button>
-                  <Button variant="secondary" className="h-10 px-4" onClick={() => setDefault(item.id, 'text')}><Database className="h-4 w-4" />设为文字</Button>
-                  <Button variant="secondary" className="h-10 px-4" onClick={() => setDefault(item.id, 'voice')}><Mic2 className="h-4 w-4" />设为语音</Button>
-                  <Button variant="danger" className="h-10 px-4" onClick={() => remove(item)}><Trash2 className="h-4 w-4" />删除</Button>
+                  <Button
+                    variant="secondary"
+                    className="h-10 px-4"
+                    disabled={!testable}
+                    title={!item.enabled ? '请先启用 Provider 后再测试。' : !testable ? '请先配置 Base URL 或服务地址。' : '测试当前 Provider 连通性'}
+                    onClick={() => testProvider(item)}
+                  ><Radio className="h-4 w-4" />测试</Button>
+                  <Button
+                    variant={item.enabled ? 'secondary' : 'primary'}
+                    className="h-10 px-4"
+                    onClick={() => patch(item.id, current => ({ ...current, enabled: !current.enabled }), item.enabled ? '停用配置' : '启用配置')}
+                  >{item.enabled ? '停用' : '启用'}</Button>
+                  {supportsTextDefault && <Button
+                    variant="secondary"
+                    className="h-10 px-4"
+                    disabled={!item.enabled || item.textDefault}
+                    title={!item.enabled ? '请先启用 Provider。' : item.textDefault ? '当前已经是文字默认 Provider。' : '设为 AI 面试官文字大模型'}
+                    onClick={() => setDefault(item.id, 'text')}
+                  ><Database className="h-4 w-4" />{item.textDefault ? '文字默认' : '设为文字'}</Button>}
+                  {supportsVoiceDefault && <Button
+                    variant="secondary"
+                    className="h-10 px-4"
+                    disabled={!item.enabled || item.voiceDefault}
+                    title={!item.enabled ? '请先启用 Provider。' : item.voiceDefault ? '当前已经是语音默认 Provider。' : '设为朗读、语音识别或虚拟人默认服务'}
+                    onClick={() => setDefault(item.id, 'voice')}
+                  ><Mic2 className="h-4 w-4" />{item.voiceDefault ? '语音默认' : '设为语音'}</Button>}
+                  <Button
+                    variant="secondary"
+                    className="h-10 px-4 text-[var(--danger-foreground)] hover:border-[var(--danger-foreground)] hover:bg-[var(--danger)]"
+                    disabled={Boolean(deleteReason)}
+                    title={deleteReason || '删除当前 Provider 配置'}
+                    onClick={() => remove(item)}
+                  ><Trash2 className="h-4 w-4" />删除</Button>
                 </div>
               </div>
             </Card>
