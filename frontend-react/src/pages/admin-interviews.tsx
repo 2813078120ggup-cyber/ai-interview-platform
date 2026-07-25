@@ -278,11 +278,11 @@ export function AdminInterviews() {
       <div className="overflow-hidden">
         <table className="w-full table-fixed text-left text-sm">
           <colgroup>
-            <col className="w-[24%]" />
+            <col className="w-[23%]" />
             <col className="w-[14%]" />
             <col className="w-[12%]" />
-            <col className="w-[8%]" />
-            <col className="w-[12%]" />
+            <col className="w-[9%]" />
+            <col className="w-[13%]" />
             <col className="w-[30%]" />
           </colgroup>
           <thead className="border-b border-border bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
@@ -306,17 +306,17 @@ export function AdminInterviews() {
                   <p className="mt-1 text-xs text-muted-foreground">{person?.username}</p>
                 </td>
                 <td className="px-5 py-5 text-muted-foreground">{dateText(item.scheduledAt)}</td>
-                <td className="px-5 py-5"><Badge tone={statusTone(item.status)}>{statusText[item.status]}</Badge></td>
+                <td className="px-5 py-5"><Badge className="shrink-0" tone={statusTone(item.status)}>{statusText[item.status]}</Badge></td>
                 <td className="px-5 py-5">
-                  {report ? <Badge tone="success">已生成 · {report.totalScore} 分</Badge> : (item.status === 2 || item.status === 4) ? <Badge tone="warning">生成中</Badge> : <span className="text-xs text-muted-foreground">面试结束后生成</span>}
+                  {report ? <Badge className="shrink-0" tone="success">已生成 · {report.totalScore} 分</Badge> : (item.status === 2 || item.status === 4) ? <Badge className="shrink-0" tone="warning">生成中</Badge> : <span className="whitespace-nowrap text-xs text-muted-foreground">面试结束后生成</span>}
                 </td>
                 <td className="px-5 py-5 align-middle">
                   <div className="grid grid-cols-[56px_56px_56px_56px_92px] justify-end gap-2">
-                    <Button variant="secondary" className="h-9 w-full gap-1 px-2 text-xs shadow-[0_6px_18px_rgba(20,18,17,.04)]" onClick={() => setNoticeTarget(item)} title="发送通知"><Bell className="hidden h-3.5 w-3.5 2xl:block" />通知</Button>
-                    <Button variant="secondary" className="h-9 w-full gap-1 px-2 text-xs shadow-[0_6px_18px_rgba(20,18,17,.04)]" onClick={() => nav(`/admin/interviews/${item.id}/review`)} title="查看回顾"><Eye className="hidden h-3.5 w-3.5 2xl:block" />回顾</Button>
-                    {item.status !== 3 && item.status !== 4 ? <Button variant="secondary" className="h-9 w-full gap-1 px-2 text-xs shadow-[0_6px_18px_rgba(20,18,17,.04)]" onClick={() => setActionTarget({ type: 'pass', interview: item })} title="标记通过"><CheckCircle2 className="hidden h-3.5 w-3.5 2xl:block" />通过</Button> : <span className="h-9" aria-hidden="true" />}
-                    <Button variant="danger" className="h-9 w-full gap-1 border border-rose-200 bg-rose-50 px-2 text-xs text-rose-600 shadow-none hover:bg-rose-100 dark:border-rose-400/20 dark:bg-rose-400/10 dark:text-rose-200" onClick={() => setActionTarget({ type: 'delete', interview: item })} title="删除面试"><Trash2 className="hidden h-3.5 w-3.5 2xl:block" />删除</Button>
-                    {report ? <Button className="h-9 w-full gap-1 px-2 text-xs" onClick={() => void openReport(report)} title="查看报告"><FileText className="hidden h-3.5 w-3.5 2xl:block" />查看报告</Button> : <span className="h-9" aria-hidden="true" />}
+                    <Button variant="secondary" className="h-9 w-full gap-1 whitespace-nowrap px-2 text-xs shadow-[0_6px_18px_rgba(20,18,17,.04)]" onClick={() => setNoticeTarget(item)} title="发送通知"><Bell className="hidden h-3.5 w-3.5 2xl:block" />通知</Button>
+                    <Button variant="secondary" className="h-9 w-full gap-1 whitespace-nowrap px-2 text-xs shadow-[0_6px_18px_rgba(20,18,17,.04)]" onClick={() => nav(`/admin/interviews/${item.id}/review`)} title="查看回顾"><Eye className="hidden h-3.5 w-3.5 2xl:block" />回顾</Button>
+                    {item.status !== 3 && item.status !== 4 ? <Button variant="secondary" className="h-9 w-full gap-1 whitespace-nowrap px-2 text-xs shadow-[0_6px_18px_rgba(20,18,17,.04)]" onClick={() => setActionTarget({ type: 'pass', interview: item })} title="标记通过"><CheckCircle2 className="hidden h-3.5 w-3.5 2xl:block" />通过</Button> : <span className="h-9" aria-hidden="true" />}
+                    <Button variant="danger" className="h-9 w-full gap-1 whitespace-nowrap border border-rose-200 bg-rose-50 px-2 text-xs text-rose-600 shadow-none hover:bg-rose-100 dark:border-rose-400/20 dark:bg-rose-400/10 dark:text-rose-200" onClick={() => setActionTarget({ type: 'delete', interview: item })} title="删除面试"><Trash2 className="hidden h-3.5 w-3.5 2xl:block" />删除</Button>
+                    {report ? <Button className="h-9 w-full gap-1 whitespace-nowrap px-2 text-xs" onClick={() => void openReport(report)} title="查看报告"><FileText className="hidden h-3.5 w-3.5 2xl:block" />查看报告</Button> : <span className="h-9" aria-hidden="true" />}
                   </div>
                 </td>
               </tr>

@@ -14,5 +14,5 @@ const tones = {
 }
 
 export function Badge({ className, tone = 'default', ...props }: BadgeProps) {
-  return <span className={cn('inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold', tones[tone], className)} {...props} />
+  return <span className={cn('inline-flex items-center whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold', tones[tone], className)} {...props} />
 }
