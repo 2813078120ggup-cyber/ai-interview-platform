@@ -1,8 +1,6 @@
 import {
   Bell,
-  CalendarClock,
   ClipboardList,
-  Download,
   Eye,
   FileText,
   Layers3,
@@ -13,6 +11,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ReportDetailView, type ReportDetailData } from '@/components/report-detail-view'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -25,7 +24,6 @@ import {
   sendNotification,
   type NotificationTemplate,
 } from '@/lib/notifications'
-import { exportReportPdf } from '@/lib/report-export'
 import { profile } from '@/lib/session'
 
 type Candidate = { id: string; username: string; realName: string }
@@ -47,25 +45,13 @@ type ReportItem = {
   adaptabilityScore: number
   status: number
 }
-type ReportDetail = {
-  totalScore: number
-  professionalScore: number
-  expressionScore: number
-  logicScore: number
-  adaptabilityScore: number
-  summary: string
-  strengths: string
-  weaknesses: string
-  improvementSuggestions: string
-  status: number
-}
+type ReportDetail = ReportDetailData
 type Template = { id: string; name: string; title: string; type: string; duration: number; questionCount: number; note: string }
 type FormState = { title: string; candidateId: string; scheduledAt: string; duration: number; type: string; source: 'question' | 'bank'; questionIds: string[]; questionBankId: string; questionCount: number }
 type BulkState = { templateId: string; candidateIds: string[]; scheduledAt: string; interval: number; questionBankId: string }
 
 const statusText: Record<number, string> = { 0: '待开始', 1: '进行中', 2: '已结束', 3: '已取消' }
 const statusTone = (status: number): 'default' | 'success' | 'warning' | 'danger' | 'info' => status === 1 ? 'success' : status === 0 ? 'info' : status === 2 ? 'default' : 'warning'
-const scoreItems: Array<[keyof ReportDetail, string]> = [['professionalScore', '专业能力'], ['expressionScore', '表达能力'], ['logicScore', '逻辑思维'], ['adaptabilityScore', '应变能力']]
 const localInput = () => { const date = new Date(Date.now() + 10 * 60_000); date.setSeconds(0, 0); return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}` }
 const toBackendTime = (value: string) => value.length === 16 ? `${value}:00` : value
 const dateText = (value?: string) => value?.replace('T', ' ').slice(0, 16) || '-'
@@ -413,51 +399,21 @@ function NotificationDialog({ interview, candidate, onClose }: { interview: Inte
 }
 
 function ReportDialog({ report, detail, loading, onClose }: { report: ReportItem; detail?: ReportDetail; loading: boolean; onClose: () => void }) {
-  const average = detail ? Math.round(scoreItems.reduce((sum, [key]) => sum + Number(detail[key]), 0) / scoreItems.length) : 0
   return <div className="fixed inset-0 z-50 overflow-y-auto bg-[var(--primary)]/30 p-4 backdrop-blur-sm">
-    <article data-print-root className="mx-auto my-7 max-w-5xl rounded-[30px] bg-surface p-6 shadow-2xl sm:p-8">
-      <div className="print-only mb-6 border-b border-[#ddd7cc] pb-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9b6847]">InterviewOS Assessment Report</p>
-        <h1 className="mt-2 text-2xl font-bold">{report.interviewTitle}</h1>
-        <p className="mt-1 text-sm text-[#7a7770]">候选人：{report.candidateName} · 面试时间：{dateText(report.scheduledAt)}</p>
-      </div>
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-semibold text-[var(--accent)]">{report.candidateName} · INTERVIEW REPORT</p>
-          <h2 className="mt-1 text-2xl font-bold">{report.interviewTitle}</h2>
-          <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground"><CalendarClock className="h-4 w-4" />{dateText(report.scheduledAt)}</p>
-        </div>
-        <div className="flex items-center gap-2 no-print">
-          <Button variant="secondary" onClick={() => exportReportPdf(`InterviewOS-${report.candidateName}-${report.interviewTitle}-评测报告`)}><Download className="h-4 w-4" />导出 PDF</Button>
-          <button onClick={onClose} className="rounded-xl p-2 hover:bg-muted"><X className="h-5 w-5" /></button>
-        </div>
-      </div>
-
-      {loading || !detail ? <div className="py-20 text-center text-muted-foreground">正在加载报告详情…</div> : <>
-        <section className="soft-emphasis-panel print-section mt-7 grid gap-6 rounded-[26px] p-6 md:grid-cols-[1fr_auto] md:items-center">
-          <div>
-            <Badge tone={detail.status === 1 ? 'success' : 'warning'}>{detail.status === 1 ? '已发布' : '草稿'}</Badge>
-            <h3 className="mt-4 text-2xl font-bold">综合得分 {detail.totalScore}</h3>
-            <p className="mt-3 max-w-3xl leading-7 text-white/85">{detail.summary}</p>
-          </div>
-          <div className="grid h-32 w-32 place-items-center rounded-full border-8 border-white/25 bg-white/10 text-center">
-            <div><strong className="text-4xl">{detail.totalScore}</strong><span className="block text-xs text-white/70">综合得分</span></div>
-          </div>
-        </section>
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {scoreItems.map(([key, label]) => <Card key={key} className="print-card">
-            <p className="text-sm text-muted-foreground">{label}</p>
-            <strong className="mt-3 block text-3xl">{detail[key]}</strong>
-            <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-[var(--primary)]" style={{ width: `${detail[key]}%` }} /></div>
-          </Card>)}
-        </div>
-        <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          <Card className="print-card"><h3 className="font-semibold text-[var(--accent)]">优势分析</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">{detail.strengths}</p></Card>
-          <Card className="print-card"><h3 className="font-semibold text-amber-700">待提升项</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">{detail.weaknesses}</p></Card>
-          <Card className="print-card"><h3 className="font-semibold text-[var(--accent)]">改进建议</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">{detail.improvementSuggestions}</p></Card>
-        </div>
-        <p className="mt-5 text-right text-sm text-muted-foreground">四项能力平均值：{average}</p>
-      </>}
+    <article className="mx-auto my-7 max-w-6xl rounded-[30px] bg-surface p-6 shadow-2xl sm:p-8">
+      {loading || !detail ? (
+        <div className="py-20 text-center text-muted-foreground">正在加载报告详情…</div>
+      ) : (
+        <ReportDetailView
+          report={detail}
+          title={report.interviewTitle}
+          eyebrow={`${report.candidateName} · INTERVIEW REPORT`}
+          heading={report.interviewTitle}
+          meta={`候选人：${report.candidateName} · 面试时间：${dateText(report.scheduledAt)}`}
+          exportTitle={`InterviewOS-${report.candidateName}-${report.interviewTitle}-评测报告`}
+          onClose={onClose}
+        />
+      )}
     </article>
   </div>
 }
