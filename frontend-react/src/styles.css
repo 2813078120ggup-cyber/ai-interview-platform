@@ -207,6 +207,57 @@ button:disabled { cursor: not-allowed; }
   transform-style: preserve-3d;
 }
 
+.login-page-shell {
+  color-scheme: light;
+  --background: #f6f4ef;
+  --surface: #fffdfa;
+  --surface-soft: #f0eee7;
+  --foreground: #141211;
+  --muted: #ece9e1;
+  --muted-foreground: #7a7770;
+  --border: #dfdbd1;
+  --primary: #151412;
+  --primary-foreground: #ffffff;
+  --accent: #9b6847;
+  --accent-soft: #f3eadf;
+  --brand: #6d5dfc;
+  --brand-pink: #ff79c8;
+  --success: #eef2e6;
+  --success-foreground: #565b39;
+  --warning: #fff3d8;
+  --warning-foreground: #8a5d16;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(109, 93, 252, .11), transparent 28rem),
+    radial-gradient(circle at 86% 24%, rgba(255, 121, 200, .10), transparent 24rem),
+    #f5f3ee !important;
+  color: #141211 !important;
+}
+
+.login-page-shell * {
+  color-scheme: light;
+}
+
+.login-page-shell input,
+.login-page-shell textarea,
+.login-page-shell select {
+  background-color: color-mix(in srgb, #fffdfa 86%, transparent) !important;
+  color: #141211 !important;
+  border-color: #dfdbd1 !important;
+}
+
+.login-page-shell input::placeholder,
+.login-page-shell textarea::placeholder {
+  color: rgba(122, 119, 112, .62) !important;
+}
+
+.login-page-shell label,
+.login-page-shell strong,
+.login-page-shell h1,
+.login-page-shell h2,
+.login-page-shell h3 {
+  color: #141211;
+}
+
 .login-hero-title {
   text-wrap: balance;
   font-feature-settings: "kern";

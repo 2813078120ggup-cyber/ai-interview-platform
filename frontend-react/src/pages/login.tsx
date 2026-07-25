@@ -110,7 +110,7 @@ export function LoginPage() {
   return (
     <main
       onMouseMove={updatePointer}
-      className="relative min-h-dvh overflow-hidden bg-[#f5f3ee] p-4 text-foreground sm:p-6 lg:p-8"
+      className="login-page-shell relative min-h-dvh overflow-hidden bg-[#f5f3ee] p-4 text-foreground sm:p-6 lg:p-8"
     >
       <motion.div
         aria-hidden
