@@ -93,8 +93,71 @@ button:disabled { cursor: not-allowed; }
   background-image: radial-gradient(color-mix(in srgb, var(--foreground) 12%, transparent) 1px, transparent 1px);
   background-size: 18px 18px;
 }
+.print-only { display: none; }
 @media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+
   aside, header, .no-print { display: none !important; }
   main { padding-left: 0 !important; }
   body { background: #fff !important; }
+
+  html.print-report-mode,
+  html.print-report-mode body {
+    background: #fff !important;
+    color: #141211 !important;
+  }
+
+  html.print-report-mode body * {
+    visibility: hidden !important;
+  }
+
+  html.print-report-mode [data-print-root],
+  html.print-report-mode [data-print-root] * {
+    visibility: visible !important;
+  }
+
+  html.print-report-mode [data-print-root] {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    color: #141211 !important;
+  }
+
+  html.print-report-mode .print-only {
+    display: block !important;
+  }
+
+  html.print-report-mode .print-card,
+  html.print-report-mode .print-section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  html.print-report-mode .rounded-\[28px\],
+  html.print-report-mode .rounded-\[30px\],
+  html.print-report-mode .rounded-\[26px\],
+  html.print-report-mode .rounded-\[24px\] {
+    border-radius: 16px !important;
+  }
+
+  html.print-report-mode .shadow-xl,
+  html.print-report-mode .shadow-2xl,
+  html.print-report-mode .shadow-black\/10 {
+    box-shadow: none !important;
+  }
+
+  html.print-report-mode .bg-surface,
+  html.print-report-mode .bg-background {
+    background: #fff !important;
+  }
 }

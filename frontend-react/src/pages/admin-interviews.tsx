@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { recordAuditLog } from '@/lib/audit-log'
 import { request, type Interview } from '@/lib/api'
+import { exportReportPdf } from '@/lib/report-export'
 import { profile } from '@/lib/session'
 
 type Candidate = { id: string; username: string; realName: string }
@@ -289,7 +290,12 @@ export function AdminInterviews() {
 function ReportDialog({ report, detail, loading, onClose }: { report: ReportItem; detail?: ReportDetail; loading: boolean; onClose: () => void }) {
   const average = detail ? Math.round(scoreItems.reduce((sum, [key]) => sum + Number(detail[key]), 0) / scoreItems.length) : 0
   return <div className="fixed inset-0 z-50 overflow-y-auto bg-[var(--primary)]/30 p-4 backdrop-blur-sm">
-    <article className="mx-auto my-7 max-w-5xl rounded-[30px] bg-surface p-6 shadow-2xl sm:p-8">
+    <article data-print-root className="mx-auto my-7 max-w-5xl rounded-[30px] bg-surface p-6 shadow-2xl sm:p-8">
+      <div className="print-only mb-6 border-b border-[#ddd7cc] pb-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9b6847]">InterviewOS Assessment Report</p>
+        <h1 className="mt-2 text-2xl font-bold">{report.interviewTitle}</h1>
+        <p className="mt-1 text-sm text-[#7a7770]">候选人：{report.candidateName} · 面试时间：{dateText(report.scheduledAt)}</p>
+      </div>
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-semibold text-[var(--accent)]">{report.candidateName} · INTERVIEW REPORT</p>
@@ -297,13 +303,13 @@ function ReportDialog({ report, detail, loading, onClose }: { report: ReportItem
           <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground"><CalendarClock className="h-4 w-4" />{dateText(report.scheduledAt)}</p>
         </div>
         <div className="flex items-center gap-2 no-print">
-          <Button variant="secondary" onClick={() => window.print()}><Download className="h-4 w-4" />导出 PDF</Button>
+          <Button variant="secondary" onClick={() => exportReportPdf(`InterviewOS-${report.candidateName}-${report.interviewTitle}-评测报告`)}><Download className="h-4 w-4" />导出 PDF</Button>
           <button onClick={onClose} className="rounded-xl p-2 hover:bg-muted"><X className="h-5 w-5" /></button>
         </div>
       </div>
 
       {loading || !detail ? <div className="py-20 text-center text-muted-foreground">正在加载报告详情…</div> : <>
-        <section className="mt-7 grid gap-6 rounded-[26px] bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] p-6 text-white md:grid-cols-[1fr_auto] md:items-center">
+        <section className="print-section mt-7 grid gap-6 rounded-[26px] bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] p-6 text-white md:grid-cols-[1fr_auto] md:items-center">
           <div>
             <Badge tone={detail.status === 1 ? 'success' : 'warning'}>{detail.status === 1 ? '已发布' : '草稿'}</Badge>
             <h3 className="mt-4 text-2xl font-bold">综合得分 {detail.totalScore}</h3>
@@ -314,16 +320,16 @@ function ReportDialog({ report, detail, loading, onClose }: { report: ReportItem
           </div>
         </section>
         <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {scoreItems.map(([key, label]) => <Card key={key}>
+          {scoreItems.map(([key, label]) => <Card key={key} className="print-card">
             <p className="text-sm text-muted-foreground">{label}</p>
             <strong className="mt-3 block text-3xl">{detail[key]}</strong>
             <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-[var(--primary)]" style={{ width: `${detail[key]}%` }} /></div>
           </Card>)}
         </div>
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          <Card><h3 className="font-semibold text-[var(--accent)]">优势分析</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">{detail.strengths}</p></Card>
-          <Card><h3 className="font-semibold text-amber-700">待提升项</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">{detail.weaknesses}</p></Card>
-          <Card><h3 className="font-semibold text-[var(--accent)]">改进建议</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">{detail.improvementSuggestions}</p></Card>
+          <Card className="print-card"><h3 className="font-semibold text-[var(--accent)]">优势分析</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">{detail.strengths}</p></Card>
+          <Card className="print-card"><h3 className="font-semibold text-amber-700">待提升项</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">{detail.weaknesses}</p></Card>
+          <Card className="print-card"><h3 className="font-semibold text-[var(--accent)]">改进建议</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">{detail.improvementSuggestions}</p></Card>
         </div>
         <p className="mt-5 text-right text-sm text-muted-foreground">四项能力平均值：{average}</p>
       </>}
