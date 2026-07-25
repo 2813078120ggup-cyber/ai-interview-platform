@@ -60,7 +60,7 @@ export function AbilityDashboard() {
     }
   }, [data])
   const radarChart = useMemo(() => {
-    const center = 150; const radius = 92
+    const center = 180; const radius = 104
     const polar = (value: number, index: number, extra = 0) => {
       const angle = -Math.PI / 2 + index * Math.PI / 2
       const distance = radius * value + extra
@@ -125,7 +125,7 @@ export function AbilityDashboard() {
       })}
     </div>
 
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.9fr)_minmax(260px,.6fr)]">
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.58fr)_minmax(380px,.82fr)]">
     <Card>
       <div className="flex items-start justify-between">
         <div><p className="text-sm font-semibold text-[var(--accent)]">HISTORICAL TREND</p><h2 className="mt-1 text-xl font-bold">历史综合能力变化</h2></div>
@@ -134,7 +134,7 @@ export function AbilityDashboard() {
       <div className="mt-8 overflow-x-auto">
         <div className="min-w-[680px]">
           <svg viewBox={'0 0 ' + trendChart.width + ' ' + trendChart.height} className="h-64 w-full overflow-visible" role="img" aria-label="综合能力折线趋势图">
-            <defs><linearGradient id="abilityTrendArea" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#14b8a6" stopOpacity=".28" /><stop offset="100%" stopColor="#14b8a6" stopOpacity="0" /></linearGradient></defs>
+            <defs><linearGradient id="abilityTrendArea" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="var(--accent)" stopOpacity=".16" /><stop offset="100%" stopColor="var(--accent)" stopOpacity="0" /></linearGradient></defs>
             {[0, .25, .5, .75, 1].map(ratio => {
               const y = trendChart.paddingY + ratio * (trendChart.height - trendChart.paddingY * 2)
               const score = Math.round(trendChart.upper - ratio * (trendChart.upper - trendChart.lower))
@@ -144,9 +144,9 @@ export function AbilityDashboard() {
               </g>
             })}
             <path d={trendChart.area} fill="url(#abilityTrendArea)" />
-            <polyline points={trendChart.line} fill="none" stroke="#0f766e" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+            <polyline points={trendChart.line} fill="none" stroke="var(--accent)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
             {trendChart.points.map((point, index) => <g key={point.interviewId}>
-              <circle cx={point.x} cy={point.y} r="8" fill="white" stroke="#0f766e" strokeWidth="4" />
+              <circle cx={point.x} cy={point.y} r="6" fill="var(--surface)" stroke="var(--accent)" strokeWidth="3" />
               <text x={point.x} y={point.y - 17} textAnchor="middle" className="fill-foreground text-[13px] font-bold">{point.totalScore}</text>
               <title>第 {index + 1} 次：{point.totalScore} 分</title>
             </g>)}
@@ -163,21 +163,21 @@ export function AbilityDashboard() {
         <h2 className="mt-1 text-xl font-bold">四维能力画像</h2>
         <p className="mt-1 text-sm text-muted-foreground">最近一次面试的能力分布</p>
       </div>
-      <div className="mx-auto mt-5 max-w-[230px] rounded-[22px] border border-[var(--border)]/80 bg-gradient-to-b from-[var(--accent-soft)] to-transparent p-2 dark:border-[var(--border)]/10 dark:from-[var(--brand)]/5">
-        <svg viewBox="0 0 300 300" className="w-full" role="img" aria-label="专业能力、表达能力、逻辑思维和应变能力的雷达图">
+      <div className="mx-auto mt-5 max-w-[350px] rounded-[24px] border border-[var(--border)]/80 bg-[linear-gradient(180deg,var(--accent-soft),transparent)] px-4 py-5 dark:border-[var(--border)]/10 dark:bg-[var(--surface-soft)]">
+        <svg viewBox="0 0 360 330" className="w-full overflow-visible" role="img" aria-label="专业能力、表达能力、逻辑思维和应变能力的雷达图">
           {[.25, .5, .75, 1].map(ratio => <polygon key={ratio} points={radarChart.polygon(ratio)} fill="none" stroke="currentColor" strokeOpacity=".12" strokeWidth="1" />)}
           {radarDimensions.map((item, index) => {
             const outer = radarChart.polar(1, index)
             const label = radarChart.polar(1, index, 28)
             return <g key={item.key}>
               <line x1={radarChart.center} y1={radarChart.center} x2={outer.x} y2={outer.y} stroke="currentColor" strokeOpacity=".14" />
-              <text x={label.x} y={label.y + 4} textAnchor={index === 1 ? 'start' : index === 3 ? 'end' : 'middle'} className="fill-muted-foreground text-[12px] font-medium">{item.label}</text>
+              <text x={index === 1 ? Math.min(label.x, 294) : index === 3 ? Math.max(label.x, 66) : label.x} y={label.y + 4} textAnchor={index === 1 ? 'start' : index === 3 ? 'end' : 'middle'} className="fill-muted-foreground text-[12px] font-medium">{item.label}</text>
             </g>
           })}
-          <polygon points={radarChart.points} fill="#14b8a6" fillOpacity=".25" stroke="#0f766e" strokeWidth="3" strokeLinejoin="round" />
+          <polygon points={radarChart.points} fill="var(--accent)" fillOpacity=".18" stroke="var(--accent)" strokeWidth="2.5" strokeLinejoin="round" />
           {radarChart.values.map((value, index) => {
             const point = radarChart.polar(value / 100, index)
-            return <circle key={radarDimensions[index].key} cx={point.x} cy={point.y} r="5" fill="white" stroke="#0f766e" strokeWidth="3"><title>{radarDimensions[index].label}：{value}</title></circle>
+            return <circle key={radarDimensions[index].key} cx={point.x} cy={point.y} r="5" fill="var(--surface)" stroke="var(--brand)" strokeWidth="2.5"><title>{radarDimensions[index].label}：{value}</title></circle>
           })}
         </svg>
       </div>
