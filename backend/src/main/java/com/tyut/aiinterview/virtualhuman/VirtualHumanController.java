@@ -1,10 +1,7 @@
 package com.tyut.aiinterview.virtualhuman;
 
 import com.tyut.aiinterview.common.ApiResponse;
-import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,14 +19,4 @@ public class VirtualHumanController {
         return ApiResponse.ok(service.sdkConfig());
     }
 
-    @PostMapping("/speak")
-    public ApiResponse<VirtualHumanDtos.SpeakResponse> speak(@Valid @RequestBody VirtualHumanDtos.SpeakRequest request) {
-        return ApiResponse.ok(service.speak(request));
-    }
-
-    @PostMapping("/stop")
-    public ApiResponse<Void> stop(@Valid @RequestBody VirtualHumanDtos.StopRequest request) {
-        service.stop(request);
-        return ApiResponse.ok(null);
-    }
 }
