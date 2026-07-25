@@ -13,6 +13,7 @@ type Answer = { interviewQuestionId: string; answerContent?: string; answerData?
 type Message = { role: 'assistant' | 'candidate'; content: string }
 type Task = { id?: string; status: string; outputPayload?: string; errorMessage?: string }
 type EndResponse = { interview: Interview; evaluationTaskId?: string; evaluationTaskStatus?: string }
+type VirtualHumanResponse = { enabled: boolean; provider: string; mode: string; status: string; message: string; sessionId: string; streamUrl: string; fallbackText: string }
 type FinishPhase = 'confirm' | 'submitting' | 'evaluating' | 'ready' | 'failed'
 type RecognitionResult = { isFinal: boolean; 0: { transcript: string } }
 type RecognitionEvent = { resultIndex: number; results: ArrayLike<RecognitionResult> }
@@ -64,6 +65,10 @@ export function InterviewRoom() {
   const [thinking, setThinking] = useState(false)
   const [error, setError] = useState('')
   const [tts, setTts] = useState(true)
+  const [virtualSessionId, setVirtualSessionId] = useState('')
+  const [virtualStreamUrl, setVirtualStreamUrl] = useState('')
+  const [virtualMessage, setVirtualMessage] = useState('本地数字人待命')
+  const [virtualActive, setVirtualActive] = useState(false)
   const [cameraOn, setCameraOn] = useState(false)
   const [listening, setListening] = useState(false)
   const [finishDialogOpen, setFinishDialogOpen] = useState(false)
@@ -132,7 +137,7 @@ export function InterviewRoom() {
   }, [id, question, choiceQuestion, finished, draft])
 
   useEffect(() => {
-    if (question && tts) speak(question.content)
+    if (question && tts) void speak(question.content)
   }, [question?.interviewQuestionId])
 
   useEffect(() => () => {
@@ -162,8 +167,28 @@ export function InterviewRoom() {
     throw new Error('报告生成等待超时，系统会继续在后台处理，你可以稍后到能力报告查看。')
   }
 
-  function speak(text: string, force = false) {
+  async function requestVirtualHuman(text: string) {
+    try {
+      const result = await request<VirtualHumanResponse>('/v1/virtual-human/speak', {
+        method: 'POST',
+        body: JSON.stringify({ text, sessionId: virtualSessionId, interviewQuestionId: question?.interviewQuestionId }),
+      })
+      setVirtualActive(result.enabled)
+      setVirtualMessage(result.message || (result.enabled ? '讯飞虚拟人正在播报' : '本地数字人播报'))
+      if (result.sessionId) setVirtualSessionId(result.sessionId)
+      if (result.streamUrl) setVirtualStreamUrl(result.streamUrl)
+      return result.enabled
+    } catch (reason) {
+      setVirtualActive(false)
+      setVirtualMessage(reason instanceof Error ? reason.message : '虚拟人服务暂不可用，已降级本地朗读')
+      return false
+    }
+  }
+
+  async function speak(text: string, force = false) {
     if ((!tts && !force) || !text) return
+    const drivenByVirtualHuman = await requestVirtualHuman(text)
+    if (drivenByVirtualHuman) return
     if (!('speechSynthesis' in window)) {
       if (force) setError('当前浏览器不支持语音朗读，请升级 Chrome / Edge，或接入服务端 TTS。')
       return
@@ -262,7 +287,7 @@ export function InterviewRoom() {
         const complete = [...candidateMessages, { role: 'assistant' as const, content: followUp }]
         setMessages(complete)
         await save(complete)
-        speak(followUp)
+        void speak(followUp)
       } catch (reason) {
         setError((reason instanceof Error ? reason.message : 'AI 面试官暂时不可用') + '。你的回答已保存，可以继续下一题或稍后重试。')
       }
@@ -356,9 +381,14 @@ export function InterviewRoom() {
 
       <div className="space-y-5">
         <Card className="overflow-hidden p-0">
-          <div className="soft-emphasis-panel relative grid aspect-video place-items-center"><div className="absolute h-40 w-40 animate-[spin_8s_linear_infinite] rounded-full border border-[var(--border)]/50" /><span className="z-10 grid h-20 w-20 place-items-center rounded-[28px] bg-[var(--brand)]/15 shadow-[0_0_45px_rgba(109,93,252,.28)]"><Sparkles className="h-9 w-9 text-[var(--accent)]" /></span><div className="absolute bottom-4 text-center"><p className="font-bold">AI 面试官</p><p className="mt-1 text-xs text-white/75">仅在主观题回答后追问</p></div></div>
+          <div className="soft-emphasis-panel relative grid aspect-video place-items-center overflow-hidden">
+            {virtualStreamUrl && /^https?:\/\//i.test(virtualStreamUrl)
+              ? <video src={virtualStreamUrl} autoPlay muted playsInline controls className="absolute inset-0 h-full w-full object-cover" />
+              : <><div className="absolute h-40 w-40 animate-[spin_8s_linear_infinite] rounded-full border border-[var(--border)]/50" /><span className="z-10 grid h-20 w-20 place-items-center rounded-[28px] bg-[var(--brand)]/15 shadow-[0_0_45px_rgba(109,93,252,.28)]"><Sparkles className="h-9 w-9 text-[var(--accent)]" /></span></>}
+            <div className="absolute bottom-4 left-4 right-4 rounded-2xl bg-black/35 px-3 py-2 text-center text-white backdrop-blur-md"><p className="font-bold">{virtualActive ? '讯飞虚拟人' : 'AI 面试官'}</p><p className="mt-1 text-xs text-white/75">{virtualMessage}</p></div>
+          </div>
           <div className="flex items-center justify-between p-4"><div><p className="text-sm font-semibold">语音朗读</p><p className="mt-1 text-xs text-muted-foreground">朗读当前题库原题</p></div><button className="rounded-xl p-2 hover:bg-muted" onClick={() => { setTts(value => !value); window.speechSynthesis?.cancel() }}>{tts ? <Volume2 className="h-4 w-4 text-[var(--accent)]" /> : <VolumeX className="h-4 w-4" />}</button></div>
-          <button onClick={() => speak(question.content, true)} className="mx-4 mb-4 flex items-center gap-2 rounded-xl bg-muted px-3 py-2 text-xs font-semibold hover:bg-[var(--accent-soft)] hover:text-[var(--accent)]"><Volume2 className="h-3.5 w-3.5" />重新朗读本题</button>
+          <button onClick={() => void speak(question.content, true)} className="mx-4 mb-4 flex items-center gap-2 rounded-xl bg-muted px-3 py-2 text-xs font-semibold hover:bg-[var(--accent-soft)] hover:text-[var(--accent)]"><Volume2 className="h-3.5 w-3.5" />重新朗读本题</button>
         </Card>
         <Card>
           <div className="flex items-center justify-between"><div><p className="font-semibold">我的画面</p><p className="mt-1 text-xs text-muted-foreground">仅本地预览</p></div><Button variant="secondary" className="h-9 px-3" onClick={() => void camera()}><Camera className="h-4 w-4" />{cameraOn ? '关闭' : '开启'}</Button></div>

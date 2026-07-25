@@ -14,6 +14,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,8 +39,32 @@ public class AiProviderService {
     public List<AiProviderDtos.ProviderView> list() {
         requireAdmin();
         ensureDefaults();
+        ensureXunfeiVirtualHuman();
         return mapper.selectList(new LambdaQueryWrapper<AiProviderConfig>().orderByAsc(AiProviderConfig::getKind).orderByAsc(AiProviderConfig::getId))
                 .stream().map(this::toView).toList();
+    }
+
+    public Optional<RuntimeProvider> defaultVirtualHumanProvider() {
+        AiProviderConfig config = mapper.selectOne(new LambdaQueryWrapper<AiProviderConfig>()
+                .eq(AiProviderConfig::getKind, "virtual-human")
+                .eq(AiProviderConfig::getEnabled, 1)
+                .orderByDesc(AiProviderConfig::getVoiceDefault)
+                .orderByAsc(AiProviderConfig::getId)
+                .last("LIMIT 1"));
+        if (config == null) return Optional.empty();
+        return Optional.of(new RuntimeProvider(
+                config.getId(),
+                config.getName(),
+                config.getCode(),
+                trim(config.getBaseUrl()),
+                trim(config.getChatModel()),
+                trim(config.getVoiceModel()),
+                trim(config.getAvatarModel()),
+                secretCodec.decrypt(config.getApiKeyCipher()),
+                secretCodec.decrypt(config.getApiSecretCipher()),
+                secretCodec.decrypt(config.getAppIdCipher()),
+                trim(config.getRemark())
+        ));
     }
 
     @Transactional
@@ -100,6 +125,17 @@ public class AiProviderService {
             return result(false, null, started, "Base URL 尚未配置");
         }
         String apiKey = secretCodec.decrypt(config.getApiKeyCipher());
+        if ("virtual-human".equals(config.getKind()) && config.getCode().toLowerCase().contains("xunfei")) {
+            String apiSecret = secretCodec.decrypt(config.getApiSecretCipher());
+            String appId = secretCodec.decrypt(config.getAppIdCipher());
+            if (appId.isBlank() || apiKey.isBlank() || apiSecret.isBlank()) {
+                return result(false, null, started, "讯飞虚拟人需要配置 AppID、API Key 和 API Secret");
+            }
+            if (trim(config.getAvatarModel()).isBlank() || trim(config.getAvatarModel()).contains("待配置")) {
+                return result(false, null, started, "请先填写讯飞虚拟人形象 ID / avatarId");
+            }
+            return result(true, null, started, "讯飞虚拟人配置完整，面试间会由后端代签调用，失败时自动降级到本地数字人");
+        }
         try {
             if ("llm".equals(config.getKind())) return testLlm(config, baseUrl, apiKey, started);
             return testEndpoint(baseUrl, apiKey, started);
@@ -219,6 +255,14 @@ public class AiProviderService {
                 "用于将 AI 面试官问题转成数字人播报和虚拟形象交互。");
     }
 
+    private void ensureXunfeiVirtualHuman() {
+        if (mapper.exists(new LambdaQueryWrapper<AiProviderConfig>().eq(AiProviderConfig::getCode, "xunfei-virtual-human"))) {
+            return;
+        }
+        insertDefault("讯飞虚拟人", "xunfei-virtual-human", "virtual-human", "https://vms.cn-huadong-1.xf-yun.com", "请填写接口服务ID", "x4_lingxiaoxuan_oral", "请填写 avatarId", false, false, false,
+                "讯飞 AI 虚拟人技术接入项。填写接口服务ID、讯飞 AppID、API Key、API Secret 和虚拟人形象 ID 后，面试间会优先驱动讯飞虚拟人播报。");
+    }
+
     private void insertDefault(String name, String code, String kind, String baseUrl, String chatModel, String voiceModel,
                                String avatarModel, boolean enabled, boolean textDefault, boolean voiceDefault, String remark) {
         AiProviderConfig config = new AiProviderConfig();
@@ -276,5 +320,20 @@ public class AiProviderService {
     }
 
     private record ChatMessage(String role, String content) {
+    }
+
+    public record RuntimeProvider(
+            Long id,
+            String name,
+            String code,
+            String baseUrl,
+            String serviceId,
+            String voiceModel,
+            String avatarModel,
+            String apiKey,
+            String apiSecret,
+            String appId,
+            String remark
+    ) {
     }
 }

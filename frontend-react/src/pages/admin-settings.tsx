@@ -83,6 +83,20 @@ function secretLabel(value: string) {
   return value || '未配置'
 }
 
+function providerLabels(kind: ProviderKind) {
+  if (kind === 'virtual-human') {
+    return {
+      chatModel: '接口服务 ID',
+      voiceModel: '发音人 / 音色',
+      avatarModel: '虚拟人形象 ID',
+      baseUrlHint: '例如：https://vms.cn-huadong-1.xf-yun.com',
+    }
+  }
+  if (kind === 'asr') return { chatModel: '聊天模型', voiceModel: '语音识别模型', avatarModel: '虚拟人形象', baseUrlHint: '' }
+  if (kind === 'tts') return { chatModel: '聊天模型', voiceModel: '语音合成模型', avatarModel: '虚拟人形象', baseUrlHint: '' }
+  return { chatModel: '聊天模型', voiceModel: '语音模型', avatarModel: '虚拟人形象', baseUrlHint: '' }
+}
+
 function Field({ label, value, secret = false }: { label: string; value: string; secret?: boolean }) {
   const [visible, setVisible] = useState(false)
   return <div className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-background/60 px-4 py-3 text-sm">
@@ -236,6 +250,7 @@ export function AdminSettings() {
             const Icon = meta.icon
             const testable = canTestProvider(item)
             const deleteReason = defaultDeleteReason(item)
+            const labels = providerLabels(item.kind)
             return <Card key={item.id} motionDelay={index * .04} className="p-0">
               <div className="flex items-start justify-between gap-4 p-5">
                 <div className="flex min-w-0 items-center gap-3">
@@ -255,9 +270,9 @@ export function AdminSettings() {
 
               <div className="space-y-2 border-y border-border bg-background/45 p-5">
                 <Field label="Base URL" value={item.baseUrl} />
-                <Field label="聊天模型" value={item.chatModel} />
-                <Field label="语音模型" value={item.voiceModel} />
-                <Field label="虚拟人形象" value={item.avatarModel} />
+                <Field label={labels.chatModel} value={item.chatModel} />
+                <Field label={labels.voiceModel} value={item.voiceModel} />
+                <Field label={labels.avatarModel} value={item.avatarModel} />
                 <Field label="APP ID" value={item.appId} secret />
                 <Field label="API Key" value={item.apiKey} secret />
                 <Field label="API Secret" value={item.apiSecret} secret />
@@ -323,10 +338,10 @@ export function AdminSettings() {
           <label className="block text-sm font-semibold">类型<select value={editing.kind} onChange={event => setEditing({ ...editing, kind: event.target.value as ProviderKind })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal outline-none focus:border-[var(--accent)]">
             {Object.entries(kindMap).map(([value, meta]) => <option key={value} value={value}>{meta.label}</option>)}
           </select></label>
-          <label className="block text-sm font-semibold">Base URL<input value={editing.baseUrl} onChange={event => setEditing({ ...editing, baseUrl: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal outline-none focus:border-[var(--accent)]" /></label>
-          <label className="block text-sm font-semibold">聊天模型<input value={editing.chatModel} onChange={event => setEditing({ ...editing, chatModel: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal outline-none focus:border-[var(--accent)]" /></label>
-          <label className="block text-sm font-semibold">语音模型<input value={editing.voiceModel} onChange={event => setEditing({ ...editing, voiceModel: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal outline-none focus:border-[var(--accent)]" /></label>
-          <label className="block text-sm font-semibold">虚拟人形象<input value={editing.avatarModel} onChange={event => setEditing({ ...editing, avatarModel: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal outline-none focus:border-[var(--accent)]" /></label>
+          <label className="block text-sm font-semibold">Base URL<input value={editing.baseUrl} placeholder={providerLabels(editing.kind).baseUrlHint} onChange={event => setEditing({ ...editing, baseUrl: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal outline-none focus:border-[var(--accent)]" /></label>
+          <label className="block text-sm font-semibold">{providerLabels(editing.kind).chatModel}<input value={editing.chatModel} onChange={event => setEditing({ ...editing, chatModel: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal outline-none focus:border-[var(--accent)]" /></label>
+          <label className="block text-sm font-semibold">{providerLabels(editing.kind).voiceModel}<input value={editing.voiceModel} onChange={event => setEditing({ ...editing, voiceModel: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal outline-none focus:border-[var(--accent)]" /></label>
+          <label className="block text-sm font-semibold">{providerLabels(editing.kind).avatarModel}<input value={editing.avatarModel} onChange={event => setEditing({ ...editing, avatarModel: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal outline-none focus:border-[var(--accent)]" /></label>
           <label className="block text-sm font-semibold">APP ID<input value={editing.appId} onChange={event => setEditing({ ...editing, appId: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal outline-none focus:border-[var(--accent)]" /></label>
           <label className="block text-sm font-semibold">API Key<input value={editing.apiKey} onChange={event => setEditing({ ...editing, apiKey: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal outline-none focus:border-[var(--accent)]" /></label>
           <label className="block text-sm font-semibold">API Secret<input value={editing.apiSecret} onChange={event => setEditing({ ...editing, apiSecret: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal outline-none focus:border-[var(--accent)]" /></label>
