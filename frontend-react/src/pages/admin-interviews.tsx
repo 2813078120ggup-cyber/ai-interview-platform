@@ -106,7 +106,8 @@ export function AdminInterviews() {
   const [items, setItems] = useState<InterviewRow[]>([])
   const [reports, setReports] = useState<ReportItem[]>([])
   const [candidates, setCandidates] = useState<Candidate[]>([])
-  const [questions, setQuestions] = useState<Question[]>([])
+  const [questionsByBank, setQuestionsByBank] = useState<Record<string, Question[]>>({})
+  const [questionLoadingBank, setQuestionLoadingBank] = useState('')
   const [banks, setBanks] = useState<QuestionBank[]>([])
   const [search, setSearch] = useState('')
   const [candidate, setCandidate] = useState('')
@@ -134,16 +135,14 @@ export function AdminInterviews() {
   async function load() {
     setLoading(true)
     try {
-      const [interviews, people, availableQuestions, bankPage, reportPage] = await Promise.all([
+      const [interviews, people, bankPage, reportPage] = await Promise.all([
         request<InterviewRow[]>('/v1/interviews'),
         request<Candidate[]>('/v1/users/candidates'),
-        request<Question[]>('/v1/question-banks/options'),
         request<Page<QuestionBank>>('/v1/question-banks?pageNo=1&pageSize=100&status=1'),
         request<Page<ReportItem>>('/v1/reports/page?pageNo=1&pageSize=300'),
       ])
       setItems(interviews)
       setCandidates(people)
-      setQuestions(availableQuestions)
       setBanks(bankPage.records)
       setReports(reportPage.records)
       setError('')
@@ -204,6 +203,19 @@ export function AdminInterviews() {
     }))
   }
 
+  async function loadBankQuestions(bankId: string) {
+    if (!bankId || questionsByBank[bankId] || questionLoadingBank === bankId) return
+    setQuestionLoadingBank(bankId)
+    try {
+      const page = await request<Page<Question>>(`/v1/question-banks/${bankId}/questions?pageNo=1&pageSize=300`)
+      setQuestionsByBank(previous => ({ ...previous, [bankId]: page.records }))
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : '无法加载题库题目')
+    } finally {
+      setQuestionLoadingBank('')
+    }
+  }
+
   async function openReport(report: ReportItem) {
     setSelectedReport(report)
     setReportDetail(undefined)
@@ -219,6 +231,7 @@ export function AdminInterviews() {
 
   async function create() {
     if (!form.title.trim() || !form.candidateId || !form.scheduledAt) { setError('请填写主题、候选人和预约时间'); return }
+    if (form.source === 'question' && !form.questionBankId) { setError('请先选择题库，再从题库中挑选题目'); return }
     if (form.source === 'question' && !form.questionIds.length) { setError('请至少选择一道题目'); return }
     if (form.source === 'bank' && !form.questionBankId) { setError('请选择题库'); return }
     setSaving(true)
@@ -239,6 +252,7 @@ export function AdminInterviews() {
     const template = templates.find(item => item.id === bulk.templateId) ?? templates[0]
     if (!bulk.title.trim()) { setError('请填写批量面试主题'); return }
     if (!bulk.candidateIds.length) { setError('请选择至少一名候选人'); return }
+    if (bulk.source === 'question' && !bulk.questionBankId) { setError('请先选择题库，再从题库中挑选题目'); return }
     if (bulk.source === 'question' && !bulk.questionIds.length) { setError('请至少为批量面试选择一道题目'); return }
     if (bulk.source === 'bank' && !bulk.questionBankId) { setError('请选择批量面试题库'); return }
     setSaving(true)
@@ -423,7 +437,7 @@ export function AdminInterviews() {
       </div>
     </Card>
 
-    {dialog && <InterviewDialog saving={saving} mode={createMode} setMode={setCreateMode} onClose={() => setDialog(false)} onSingleSubmit={create} onBulkSubmit={createBulk} form={form} setForm={setForm} bulk={bulk} setBulk={setBulk} candidates={candidates} questions={questions} banks={banks} templates={templates} applyTemplate={applyTemplate} applyBulkTemplate={applyBulkTemplate} />}
+    {dialog && <InterviewDialog saving={saving} mode={createMode} setMode={setCreateMode} onClose={() => setDialog(false)} onSingleSubmit={create} onBulkSubmit={createBulk} form={form} setForm={setForm} bulk={bulk} setBulk={setBulk} candidates={candidates} questionsByBank={questionsByBank} questionLoadingBank={questionLoadingBank} loadBankQuestions={loadBankQuestions} banks={banks} templates={templates} applyTemplate={applyTemplate} applyBulkTemplate={applyBulkTemplate} />}
     {noticeTarget && <NotificationDialog interview={noticeTarget} candidate={candidateById.get(String(noticeTarget.candidateId))} onClose={() => setNoticeTarget(undefined)} />}
     {actionTarget && <InterviewActionDialog target={actionTarget} candidate={candidateById.get(String(actionTarget.interview.candidateId))} busy={actionBusy} onClose={() => setActionTarget(undefined)} onConfirm={confirmInterviewAction} />}
     {selectedReport && <ReportDialog report={selectedReport} detail={reportDetail} loading={reportLoading} onClose={closeReport} />}
@@ -610,7 +624,9 @@ function InterviewDialog({
   bulk,
   setBulk,
   candidates,
-  questions,
+  questionsByBank,
+  questionLoadingBank,
+  loadBankQuestions,
   banks,
   templates,
   applyTemplate,
@@ -627,13 +643,19 @@ function InterviewDialog({
   bulk: BulkState
   setBulk: (value: BulkState) => void
   candidates: Candidate[]
-  questions: Question[]
+  questionsByBank: Record<string, Question[]>
+  questionLoadingBank: string
+  loadBankQuestions: (bankId: string) => void
   banks: QuestionBank[]
   templates: Template[]
   applyTemplate: (value: Template) => void
   applyBulkTemplate: (value: Template) => void
 }) {
   const bulkTemplate = templates.find(item => item.id === bulk.templateId) ?? templates[0]
+  const formQuestions = form.questionBankId ? questionsByBank[form.questionBankId] ?? [] : []
+  const bulkQuestions = bulk.questionBankId ? questionsByBank[bulk.questionBankId] ?? [] : []
+  const formQuestionsLoading = questionLoadingBank === form.questionBankId
+  const bulkQuestionsLoading = questionLoadingBank === bulk.questionBankId
 
   return <div className="fixed inset-0 z-50 overflow-y-auto bg-black/35 p-4 backdrop-blur-sm">
     <div className="mx-auto my-8 max-w-4xl rounded-[34px] border border-border bg-surface p-6 shadow-2xl sm:p-8">
@@ -698,12 +720,20 @@ function InterviewDialog({
             <button type="button" onClick={() => setForm({ ...form, source: 'bank', questionIds: [] })} className={`flex-1 rounded-full px-3 py-2 text-sm transition ${form.source === 'bank' ? 'bg-surface font-semibold shadow-sm' : 'text-muted-foreground'}`}>选择题库抽题</button>
           </div>
         </div>
-        {form.source === 'question' ? <label className="text-sm font-semibold">面试题目（可多选任意题目）
-          <select multiple value={form.questionIds} onChange={event => setForm({ ...form, questionIds: Array.from(event.target.selectedOptions, option => option.value) })} className="mt-2 h-40 w-full rounded-2xl border border-border bg-background p-3 text-sm font-normal">
-            {questions.map(item => <option key={item.id} value={item.id}>#{item.id} · {item.content}</option>)}
-          </select>
-          <span className="mt-2 block text-xs text-muted-foreground">按住 Ctrl / Command 可多选。</span>
-        </label> : <div className="grid gap-5 sm:grid-cols-[1fr_150px]">
+        {form.source === 'question' ? <div className="grid gap-5">
+          <label className="text-sm font-semibold">选择题库
+            <select value={form.questionBankId} onChange={event => { const bankId = event.target.value; setForm({ ...form, questionBankId: bankId, questionIds: [] }); void loadBankQuestions(bankId) }} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal">
+              <option value="">先选择管理后台题库</option>
+              {banks.map(item => <option key={item.id} value={item.id}>{item.name}（{item.bankCode}）</option>)}
+            </select>
+          </label>
+          <label className="text-sm font-semibold">从当前题库挑选题目
+            <select multiple value={form.questionIds} disabled={!form.questionBankId || formQuestionsLoading} onChange={event => setForm({ ...form, questionIds: Array.from(event.target.selectedOptions, option => option.value) })} className="mt-2 h-40 w-full rounded-2xl border border-border bg-background p-3 text-sm font-normal disabled:cursor-not-allowed disabled:opacity-60">
+              {formQuestions.map(item => <option key={item.id} value={item.id}>#{item.id} · {item.content}</option>)}
+            </select>
+            <span className="mt-2 block text-xs text-muted-foreground">{form.questionBankId ? formQuestionsLoading ? '正在加载题库题目…' : formQuestions.length ? '按住 Ctrl / Command 可多选。' : '当前题库暂无可选题目。' : '请选择题库后再挑选题目。'}</span>
+          </label>
+        </div> : <div className="grid gap-5 sm:grid-cols-[1fr_150px]">
           <label className="text-sm font-semibold">面试题库
             <select value={form.questionBankId} onChange={event => setForm({ ...form, questionBankId: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal">
               <option value="">选择题库</option>
@@ -768,12 +798,20 @@ function InterviewDialog({
             <button type="button" onClick={() => setBulk({ ...bulk, source: 'bank', questionIds: [] })} className={`flex-1 rounded-full px-3 py-2 text-sm transition ${bulk.source === 'bank' ? 'bg-surface font-semibold shadow-sm' : 'text-muted-foreground'}`}>选择题库抽题</button>
           </div>
         </div>
-        {bulk.source === 'question' ? <label className="text-sm font-semibold">面试题目（可多选任意题目）
-          <select multiple value={bulk.questionIds} onChange={event => setBulk({ ...bulk, questionIds: Array.from(event.target.selectedOptions, option => option.value) })} className="mt-2 h-40 w-full rounded-2xl border border-border bg-background p-3 text-sm font-normal">
-            {questions.map(item => <option key={item.id} value={item.id}>#{item.id} · {item.content}</option>)}
-          </select>
-          <span className="mt-2 block text-xs text-muted-foreground">所有候选人都会使用同一组题目快照。</span>
-        </label> : <div className="grid gap-5 sm:grid-cols-[1fr_150px]">
+        {bulk.source === 'question' ? <div className="grid gap-5">
+          <label className="text-sm font-semibold">选择题库
+            <select value={bulk.questionBankId} onChange={event => { const bankId = event.target.value; setBulk({ ...bulk, questionBankId: bankId, questionIds: [] }); void loadBankQuestions(bankId) }} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal">
+              <option value="">先选择管理后台题库</option>
+              {banks.map(item => <option key={item.id} value={item.id}>{item.name}（{item.bankCode}）</option>)}
+            </select>
+          </label>
+          <label className="text-sm font-semibold">从当前题库挑选题目
+            <select multiple value={bulk.questionIds} disabled={!bulk.questionBankId || bulkQuestionsLoading} onChange={event => setBulk({ ...bulk, questionIds: Array.from(event.target.selectedOptions, option => option.value) })} className="mt-2 h-40 w-full rounded-2xl border border-border bg-background p-3 text-sm font-normal disabled:cursor-not-allowed disabled:opacity-60">
+              {bulkQuestions.map(item => <option key={item.id} value={item.id}>#{item.id} · {item.content}</option>)}
+            </select>
+            <span className="mt-2 block text-xs text-muted-foreground">{bulk.questionBankId ? bulkQuestionsLoading ? '正在加载题库题目…' : bulkQuestions.length ? '所有候选人都会使用同一组题目快照。' : '当前题库暂无可选题目。' : '请选择题库后再挑选题目。'}</span>
+          </label>
+        </div> : <div className="grid gap-5 sm:grid-cols-[1fr_150px]">
           <label className="text-sm font-semibold">面试题库
             <select value={bulk.questionBankId} onChange={event => setBulk({ ...bulk, questionBankId: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal">
               <option value="">选择题库</option>
