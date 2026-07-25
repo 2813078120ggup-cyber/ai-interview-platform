@@ -275,8 +275,16 @@ export function AdminInterviews() {
           <option value="4">已通过</option>
         </select>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[1380px] text-left text-sm">
+      <div className="overflow-hidden">
+        <table className="w-full table-fixed text-left text-sm">
+          <colgroup>
+            <col className="w-[24%]" />
+            <col className="w-[14%]" />
+            <col className="w-[12%]" />
+            <col className="w-[8%]" />
+            <col className="w-[12%]" />
+            <col className="w-[30%]" />
+          </colgroup>
           <thead className="border-b border-border bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
               <th className="px-5 py-4">面试主题</th>
@@ -284,7 +292,7 @@ export function AdminInterviews() {
               <th className="px-5 py-4">预约时间</th>
               <th className="px-5 py-4">状态</th>
               <th className="px-5 py-4">报告</th>
-              <th className="w-[560px] px-5 py-4 text-right">操作</th>
+              <th className="px-5 py-4 text-right">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -292,7 +300,7 @@ export function AdminInterviews() {
               const person = candidateById.get(String(item.candidateId))
               const report = reportByInterviewId.get(String(item.id))
               return <tr key={item.id} className="border-b border-border/70 last:border-0 hover:bg-muted/30">
-                <td className="px-5 py-5 font-semibold">{item.title}</td>
+                <td className="break-words px-5 py-5 font-semibold">{item.title}</td>
                 <td className="px-5 py-5">
                   <button onClick={() => person && nav(`/admin/candidates/${person.id}`)} className="font-medium hover:text-[var(--accent)]">{person?.realName ?? `候选人 #${item.candidateId}`}</button>
                   <p className="mt-1 text-xs text-muted-foreground">{person?.username}</p>
@@ -303,12 +311,12 @@ export function AdminInterviews() {
                   {report ? <Badge tone="success">已生成 · {report.totalScore} 分</Badge> : (item.status === 2 || item.status === 4) ? <Badge tone="warning">生成中</Badge> : <span className="text-xs text-muted-foreground">面试结束后生成</span>}
                 </td>
                 <td className="px-5 py-5 align-middle">
-                  <div className="grid grid-cols-[82px_82px_82px_82px_120px] justify-end gap-3">
-                    <Button variant="secondary" className="h-9 w-full px-2.5 text-xs shadow-[0_6px_18px_rgba(20,18,17,.04)]" onClick={() => setNoticeTarget(item)}><Bell className="h-4 w-4" />通知</Button>
-                    <Button variant="secondary" className="h-9 w-full px-2.5 text-xs shadow-[0_6px_18px_rgba(20,18,17,.04)]" onClick={() => nav(`/admin/interviews/${item.id}/review`)}><Eye className="h-4 w-4" />回顾</Button>
-                    {item.status !== 3 && item.status !== 4 ? <Button variant="secondary" className="h-9 w-full px-2.5 text-xs shadow-[0_6px_18px_rgba(20,18,17,.04)]" onClick={() => setActionTarget({ type: 'pass', interview: item })}><CheckCircle2 className="h-4 w-4" />通过</Button> : <span className="h-9" aria-hidden="true" />}
-                    <Button variant="danger" className="h-9 w-full border border-rose-200 bg-rose-50 px-2.5 text-xs text-rose-600 shadow-none hover:bg-rose-100 dark:border-rose-400/20 dark:bg-rose-400/10 dark:text-rose-200" onClick={() => setActionTarget({ type: 'delete', interview: item })}><Trash2 className="h-4 w-4" />删除</Button>
-                    {report ? <Button className="h-9 w-full px-2.5 text-xs" onClick={() => void openReport(report)}><FileText className="h-4 w-4" />查看报告</Button> : <span className="h-9" aria-hidden="true" />}
+                  <div className="grid grid-cols-[56px_56px_56px_56px_92px] justify-end gap-2">
+                    <Button variant="secondary" className="h-9 w-full gap-1 px-2 text-xs shadow-[0_6px_18px_rgba(20,18,17,.04)]" onClick={() => setNoticeTarget(item)} title="发送通知"><Bell className="hidden h-3.5 w-3.5 2xl:block" />通知</Button>
+                    <Button variant="secondary" className="h-9 w-full gap-1 px-2 text-xs shadow-[0_6px_18px_rgba(20,18,17,.04)]" onClick={() => nav(`/admin/interviews/${item.id}/review`)} title="查看回顾"><Eye className="hidden h-3.5 w-3.5 2xl:block" />回顾</Button>
+                    {item.status !== 3 && item.status !== 4 ? <Button variant="secondary" className="h-9 w-full gap-1 px-2 text-xs shadow-[0_6px_18px_rgba(20,18,17,.04)]" onClick={() => setActionTarget({ type: 'pass', interview: item })} title="标记通过"><CheckCircle2 className="hidden h-3.5 w-3.5 2xl:block" />通过</Button> : <span className="h-9" aria-hidden="true" />}
+                    <Button variant="danger" className="h-9 w-full gap-1 border border-rose-200 bg-rose-50 px-2 text-xs text-rose-600 shadow-none hover:bg-rose-100 dark:border-rose-400/20 dark:bg-rose-400/10 dark:text-rose-200" onClick={() => setActionTarget({ type: 'delete', interview: item })} title="删除面试"><Trash2 className="hidden h-3.5 w-3.5 2xl:block" />删除</Button>
+                    {report ? <Button className="h-9 w-full gap-1 px-2 text-xs" onClick={() => void openReport(report)} title="查看报告"><FileText className="hidden h-3.5 w-3.5 2xl:block" />查看报告</Button> : <span className="h-9" aria-hidden="true" />}
                   </div>
                 </td>
               </tr>
