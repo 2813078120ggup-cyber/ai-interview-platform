@@ -20,7 +20,6 @@ import {
   RotateCcw,
   ShieldCheck,
   Sparkles,
-  Timer,
   UserRound,
   Video,
   Waves,
@@ -233,25 +232,6 @@ export function LoginPage() {
                 ))}
               </div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 18, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ delay: 0.5, duration: 0.45 }}
-                className="login-live-card"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f4eee6] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--accent)]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
-                    Live
-                  </span>
-                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                    <Timer className="h-3.5 w-3.5" />
-                    28:32
-                  </span>
-                </div>
-                <p className="mt-3 text-sm font-bold">AI 面试官</p>
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">请结合项目经历，说明一次你如何定位并解决性能问题。</p>
-              </motion.div>
             </div>
 
             <div className="login-feature-stack grid content-center gap-3">
