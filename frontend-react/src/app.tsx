@@ -126,6 +126,9 @@ function Overview() {
   const practiceCount = interviews.filter(item => item.remark === 'candidate-practice').length
   const averageScore = summary?.latest?.totalScore ?? 0
   const feedbackCount = summary?.reportCount ?? 0
+  const activePractice = interviews.find(item => item.remark === 'candidate-practice' && item.status === 1)
+  const pendingPractice = interviews.find(item => item.remark === 'candidate-practice' && item.status === 0)
+  const resumablePractice = activePractice ?? pendingPractice
   const nextPracticeBank = banks[0]
   const stats = [
     ['本周练习', String(Math.max(practiceCount, 0)).padStart(2, '0'), banks.length ? `${banks.length} 个题库` : '无题库'],
@@ -135,6 +138,15 @@ function Overview() {
   ]
 
   async function startPractice() {
+    if (resumablePractice) {
+      try {
+        if (resumablePractice.status === 0) await request(`/v1/interviews/${resumablePractice.id}/start`, { method: 'POST' })
+        nav(`/candidate/interviews/${resumablePractice.id}/room`)
+      } catch (reason) {
+        setError(reason instanceof Error ? reason.message : '无法继续训练')
+      }
+      return
+    }
     if (!nextPracticeBank) {
       nav('/library')
       return
@@ -157,7 +169,7 @@ function Overview() {
     <div>
       <p className="text-sm font-semibold text-[var(--accent)]">AI INTERVIEW WORKSPACE</p>
       <h1 className="mt-2 text-3xl font-bold tracking-tight">让每一次面试，都成为进步。</h1>
-      <p className="mt-2 text-muted-foreground">查看训练进度、开始模拟面试，并追踪你的能力变化。</p>
+      <p className="mt-2 text-muted-foreground">查看训练进度、继续未完成练习，并追踪你的能力变化。</p>
     </div>
 
     {error && <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>}
@@ -171,14 +183,14 @@ function Overview() {
     <div className="grid gap-6 xl:grid-cols-[1.45fr_1fr]">
       <Card>
         <div className="flex items-center justify-between">
-          <div><h2 className="font-bold">继续你的训练</h2><p className="mt-1 text-sm text-muted-foreground">{nextPracticeBank ? `${nextPracticeBank.name} · 30 分钟` : '选择一个题库开始模拟练习'}</p></div>
-          <Badge tone="warning">{nextPracticeBank ? '待开始' : '待配置'}</Badge>
+          <div><h2 className="font-bold">继续你的训练</h2><p className="mt-1 text-sm text-muted-foreground">{resumablePractice ? `${resumablePractice.title} · ${resumablePractice.duration} 分钟` : nextPracticeBank ? `${nextPracticeBank.name} · 30 分钟` : '选择一个题库开始模拟练习'}</p></div>
+          <Badge tone={activePractice ? 'success' : 'warning'}>{activePractice ? '进行中' : resumablePractice ? '待开始' : nextPracticeBank ? '待开始' : '待配置'}</Badge>
         </div>
         <div className="soft-emphasis-panel mt-7 rounded-2xl p-6">
           <Bot className="h-7 w-7" />
           <h3 className="mt-5 text-xl font-bold">AI 面试官已经就绪</h3>
           <p className="mt-2 text-sm text-white/80">开启语音或文字对话，获得逐题反馈与完整能力报告。</p>
-          <Button className="mt-5" disabled={busy} onClick={() => void startPractice()}>{busy ? '创建中…' : '开始模拟面试'} <Sparkles className="h-4 w-4" /></Button>
+          <Button className="mt-5" disabled={busy} onClick={() => void startPractice()}>{busy ? '创建中…' : resumablePractice ? '继续训练' : '开始模拟面试'} <Sparkles className="h-4 w-4" /></Button>
         </div>
       </Card>
 
