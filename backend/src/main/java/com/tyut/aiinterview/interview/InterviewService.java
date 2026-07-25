@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tyut.aiinterview.common.BusinessException;
 import com.tyut.aiinterview.common.PageResult;
+import com.tyut.aiinterview.domain.AiTask;
 import com.tyut.aiinterview.domain.Interview;
 import com.tyut.aiinterview.domain.InterviewAnswer;
 import com.tyut.aiinterview.domain.InterviewQuestion;
@@ -219,7 +220,7 @@ public class InterviewService {
     }
 
     @Transactional
-    public void end(Long id) {
+    public InterviewDtos.EndResponse end(Long id) {
         Interview interview = requireInterview(id);
         if (!(currentUser.id().equals(interview.getCandidateId()) || isManager())) throw BusinessException.forbidden("仅候选人或管理员可结束 AI 面试");
         requireStatus(interview, Interview.IN_PROGRESS, "当前状态不允许结束");
@@ -229,7 +230,8 @@ public class InterviewService {
                 .eq(Interview::getStatus, Interview.IN_PROGRESS)) == 0) {
             throw BusinessException.badRequest("面试状态已变更，请刷新后重试");
         }
-        aiEvaluationGateway.enqueue(interview);
+        AiTask task = aiEvaluationGateway.enqueue(interview);
+        return new InterviewDtos.EndResponse(interview, task.getId(), task.getStatus());
     }
 
     public List<InterviewDtos.QuestionView> questions(Long interviewId) {

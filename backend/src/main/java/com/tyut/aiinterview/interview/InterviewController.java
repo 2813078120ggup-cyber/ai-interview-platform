@@ -73,9 +73,8 @@ public class InterviewController {
     }
 
     @PostMapping("/{id}/end")
-    public ApiResponse<Void> end(@PathVariable Long id) {
-        service.end(id);
-        return ApiResponse.ok();
+    public ApiResponse<InterviewDtos.EndResponse> end(@PathVariable Long id) {
+        return ApiResponse.ok(service.end(id));
     }
 
     @GetMapping("/{id}/questions")

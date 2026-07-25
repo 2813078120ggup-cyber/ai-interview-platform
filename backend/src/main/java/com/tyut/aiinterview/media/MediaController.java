@@ -39,4 +39,6 @@ public class MediaController {
     @PostMapping("/v1/interviews/{interviewId}/ai-opening")
     public ApiResponse<AiTask> opening(@PathVariable Long interviewId) { return ApiResponse.ok(taskService.requestOpening(interviewId)); }
     @GetMapping("/v1/ai-tasks/{id}") public ApiResponse<AiTask> task(@PathVariable Long id) { return ApiResponse.ok(taskService.get(id)); }
+    @GetMapping("/v1/interviews/{interviewId}/evaluation-task")
+    public ApiResponse<AiTask> evaluationTask(@PathVariable Long interviewId) { return ApiResponse.ok(taskService.latestEvaluationTask(interviewId)); }
 }

@@ -107,6 +107,18 @@ public class AiTaskService {
         return task;
     }
 
+    public AiTask latestEvaluationTask(Long interviewId) {
+        Interview interview = requireInterview(interviewId);
+        requireParticipant(interview);
+        AiTask task = taskMapper.selectOne(new LambdaQueryWrapper<AiTask>()
+                .eq(AiTask::getInterviewId, interviewId)
+                .eq(AiTask::getTaskType, AUTO_EVALUATION)
+                .orderByDesc(AiTask::getId)
+                .last("LIMIT 1"));
+        if (task == null) throw BusinessException.notFound("AI 评测任务不存在");
+        return task;
+    }
+
     @Scheduled(fixedDelayString = "${app.ai-task.poll-interval-ms:3000}")
     public void processPendingTasks() {
         List<AiTask> tasks = taskMapper.selectList(new LambdaQueryWrapper<AiTask>().eq(AiTask::getStatus, "PENDING")

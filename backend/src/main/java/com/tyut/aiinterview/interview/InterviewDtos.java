@@ -9,6 +9,7 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import com.tyut.aiinterview.domain.Interview;
 
 public final class InterviewDtos {
     private InterviewDtos() {
@@ -48,5 +49,8 @@ public final class InterviewDtos {
 
     public record AnswerView(Long interviewQuestionId, String answerContent, String answerData, String audioUrl,
                              Integer durationSeconds, LocalDateTime answeredAt) {
+    }
+
+    public record EndResponse(Interview interview, Long evaluationTaskId, String evaluationTaskStatus) {
     }
 }
