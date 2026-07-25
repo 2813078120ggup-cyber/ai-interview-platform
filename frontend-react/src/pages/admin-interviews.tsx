@@ -324,11 +324,14 @@ export function AdminInterviews() {
                       >
                         <MoreHorizontal className="h-3.5 w-3.5" />更多
                       </Button>
-                      {openActions === String(item.id) && <div className="absolute right-0 top-11 z-30 w-36 overflow-hidden rounded-2xl border border-border bg-surface p-1.5 text-sm shadow-2xl">
-                        <button className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition hover:bg-muted" onClick={() => { setOpenActions(undefined); setNoticeTarget(item) }}><Bell className="h-4 w-4" />发送通知</button>
-                        {item.status !== 3 && item.status !== 4 && <button className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition hover:bg-muted" onClick={() => { setOpenActions(undefined); setActionTarget({ type: 'pass', interview: item }) }}><CheckCircle2 className="h-4 w-4" />标记通过</button>}
-                        <button className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-rose-600 transition hover:bg-rose-50 dark:text-rose-200 dark:hover:bg-rose-400/10" onClick={() => { setOpenActions(undefined); setActionTarget({ type: 'delete', interview: item }) }}><Trash2 className="h-4 w-4" />删除面试</button>
-                      </div>}
+                      {openActions === String(item.id) && <>
+                        <button className="fixed inset-0 z-20 cursor-default" aria-label="关闭更多操作菜单" onClick={() => setOpenActions(undefined)} />
+                        <div className="absolute right-0 top-11 z-30 w-36 overflow-hidden rounded-2xl border border-border bg-surface p-1.5 text-sm shadow-2xl">
+                          <button className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition hover:bg-muted" onClick={() => { setOpenActions(undefined); setNoticeTarget(item) }}><Bell className="h-4 w-4" />发送通知</button>
+                          {item.status !== 3 && item.status !== 4 && <button className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition hover:bg-muted" onClick={() => { setOpenActions(undefined); setActionTarget({ type: 'pass', interview: item }) }}><CheckCircle2 className="h-4 w-4" />标记通过</button>}
+                          <button className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-rose-600 transition hover:bg-rose-50 dark:text-rose-200 dark:hover:bg-rose-400/10" onClick={() => { setOpenActions(undefined); setActionTarget({ type: 'delete', interview: item }) }}><Trash2 className="h-4 w-4" />删除面试</button>
+                        </div>
+                      </>}
                     </div>
                     {report ? <Button className="h-9 w-full gap-1 whitespace-nowrap px-2 text-xs" onClick={() => void openReport(report)} title="查看报告"><FileText className="hidden h-3.5 w-3.5 xl:block" />查看报告</Button> : <span className="h-9" aria-hidden="true" />}
                   </div>
