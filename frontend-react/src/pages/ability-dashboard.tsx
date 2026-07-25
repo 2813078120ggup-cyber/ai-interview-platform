@@ -98,7 +98,7 @@ export function AbilityDashboard() {
       <Button variant="secondary"><BarChart3 className="h-4 w-4" />已评测 {data.reportCount} 场</Button>
     </header>
 
-    <section className="grid gap-5 overflow-hidden rounded-[28px] bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] p-7 text-white md:grid-cols-[1fr_auto]">
+    <section className="soft-emphasis-panel grid gap-5 overflow-hidden rounded-[28px] p-7 md:grid-cols-[1fr_auto]">
       <div>
         <p className="text-sm text-white/75">当前综合能力值</p>
         <strong className="mt-2 block text-6xl tracking-tight">{data.latest.totalScore}</strong>

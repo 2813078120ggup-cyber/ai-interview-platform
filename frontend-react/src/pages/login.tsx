@@ -49,7 +49,7 @@ export function LoginPage() {
     <div className="pointer-events-none absolute bottom-[10%] right-[12%] h-80 w-80 rounded-full bg-[var(--brand-pink)]/10 blur-3xl" />
 
     <section className="relative hidden min-h-dvh p-8 lg:flex">
-      <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .45, ease: 'easeOut' }} className="relative flex w-full overflow-hidden rounded-[36px] border border-border bg-[linear-gradient(135deg,var(--primary),color-mix(in_srgb,var(--primary)_72%,var(--accent)))] p-10 text-white shadow-[0_30px_90px_rgba(20,18,17,.22)]">
+      <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .45, ease: 'easeOut' }} className="soft-emphasis-panel relative flex w-full overflow-hidden rounded-[36px] p-10">
         <div className="absolute -right-24 -top-24 h-80 w-80 rounded-full bg-[var(--brand)]/30 blur-3xl" />
         <div className="absolute bottom-12 right-10 h-44 w-44 rounded-full bg-[var(--brand-pink)]/20 blur-2xl" />
         <div className="absolute inset-x-10 bottom-10 h-px bg-white/15" />

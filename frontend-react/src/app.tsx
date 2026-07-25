@@ -49,7 +49,7 @@ function Overview() {
     <div className="grid gap-6 xl:grid-cols-[1.45fr_1fr]">
       <Card>
         <div className="flex items-center justify-between"><div><h2 className="font-bold">继续你的训练</h2><p className="mt-1 text-sm text-muted-foreground">Java 核心能力模拟面试 · 45 分钟</p></div><Badge tone="warning">待开始</Badge></div>
-        <div className="mt-7 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] p-6 text-white"><Bot className="h-7 w-7" /><h3 className="mt-5 text-xl font-bold">AI 面试官已经就绪</h3><p className="mt-2 text-sm text-white/80">开启语音或文字对话，获得逐题反馈与完整能力报告。</p><Button className="mt-5 bg-white text-[var(--accent)] hover:bg-[var(--accent-soft)]">开始模拟面试 <Sparkles className="h-4 w-4" /></Button></div>
+        <div className="soft-emphasis-panel mt-7 rounded-2xl p-6"><Bot className="h-7 w-7" /><h3 className="mt-5 text-xl font-bold">AI 面试官已经就绪</h3><p className="mt-2 text-sm text-white/80">开启语音或文字对话，获得逐题反馈与完整能力报告。</p><Button className="mt-5">开始模拟面试 <Sparkles className="h-4 w-4" /></Button></div>
       </Card>
       <Card>
         <h2 className="font-bold">能力趋势</h2><p className="mt-1 text-sm text-muted-foreground">过去 6 次面试的综合表现</p>

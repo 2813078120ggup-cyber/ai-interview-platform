@@ -309,7 +309,7 @@ function ReportDialog({ report, detail, loading, onClose }: { report: ReportItem
       </div>
 
       {loading || !detail ? <div className="py-20 text-center text-muted-foreground">正在加载报告详情…</div> : <>
-        <section className="print-section mt-7 grid gap-6 rounded-[26px] bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] p-6 text-white md:grid-cols-[1fr_auto] md:items-center">
+        <section className="soft-emphasis-panel print-section mt-7 grid gap-6 rounded-[26px] p-6 md:grid-cols-[1fr_auto] md:items-center">
           <div>
             <Badge tone={detail.status === 1 ? 'success' : 'warning'}>{detail.status === 1 ? '已发布' : '草稿'}</Badge>
             <h3 className="mt-4 text-2xl font-bold">综合得分 {detail.totalScore}</h3>

@@ -93,6 +93,86 @@ button:disabled { cursor: not-allowed; }
   background-image: radial-gradient(color-mix(in srgb, var(--foreground) 12%, transparent) 1px, transparent 1px);
   background-size: 18px 18px;
 }
+
+.soft-emphasis-panel {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+  background:
+    radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--brand-pink) 13%, transparent), transparent 24rem),
+    radial-gradient(circle at 12% 4%, color-mix(in srgb, var(--brand) 10%, transparent), transparent 22rem),
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--surface) 84%, var(--accent-soft)),
+      color-mix(in srgb, var(--accent-soft) 58%, var(--surface))
+    );
+  color: var(--foreground);
+  box-shadow: 0 22px 55px color-mix(in srgb, var(--foreground) 8%, transparent);
+}
+
+.soft-emphasis-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(120deg, color-mix(in srgb, #fff 44%, transparent), transparent 38%),
+    radial-gradient(circle at 96% 88%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 18rem);
+  opacity: .72;
+}
+
+.soft-emphasis-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+.soft-emphasis-panel.text-white,
+.soft-emphasis-panel .text-white {
+  color: var(--foreground) !important;
+}
+
+.soft-emphasis-panel [class*="text-white/"] {
+  color: var(--muted-foreground) !important;
+}
+
+.soft-emphasis-panel .bg-white,
+.soft-emphasis-panel .bg-white\/10,
+.soft-emphasis-panel .bg-white\/15 {
+  background: color-mix(in srgb, var(--surface) 78%, transparent) !important;
+}
+
+.soft-emphasis-panel .border-white\/15,
+.soft-emphasis-panel .border-white\/25,
+.soft-emphasis-panel .border-\[var\(--border\)\]\/40 {
+  border-color: color-mix(in srgb, var(--accent) 20%, var(--border)) !important;
+}
+
+.soft-emphasis-panel .shadow-\[0_0_0_12px_rgba\(255\,255\,255\,\.05\)\] {
+  box-shadow: 0 0 0 12px color-mix(in srgb, var(--surface) 42%, transparent) !important;
+}
+
+.soft-emphasis-panel .text-\[var\(--accent\)\],
+.soft-emphasis-panel .text-\[var\(--foreground\)\] {
+  color: var(--accent) !important;
+}
+
+.dark .soft-emphasis-panel {
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--border));
+  background:
+    radial-gradient(circle at 90% 10%, color-mix(in srgb, var(--brand-pink) 12%, transparent), transparent 24rem),
+    radial-gradient(circle at 10% 0%, color-mix(in srgb, var(--brand) 12%, transparent), transparent 20rem),
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--surface) 88%, var(--accent-soft)),
+      color-mix(in srgb, var(--surface-soft) 72%, var(--accent-soft))
+    );
+}
+
+.dark .soft-emphasis-panel::before {
+  background: radial-gradient(circle at 96% 88%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 18rem);
+  opacity: .52;
+}
+
 .print-only { display: none; }
 @media print {
   @page {
