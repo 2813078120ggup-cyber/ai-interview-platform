@@ -432,10 +432,6 @@ export function LoginPage() {
                 {busy ? <Waves className="h-4 w-4 animate-pulse" /> : <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />}
               </Button>
 
-              <p className="mt-5 text-center text-xs leading-5 text-muted-foreground">
-                管理员账号由后台初始化；候选人可直接注册并进入练习空间。
-              </p>
-
               <div className="mt-6 flex items-start gap-3 rounded-2xl border border-border bg-[#f3efe8] px-4 py-3 text-xs leading-5 text-muted-foreground">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[var(--accent)]" />
                 <span>密码通过后端 Spring Security BCrypt 校验，登录成功后自动分流到管理端或候选人端。</span>
