@@ -39,6 +39,14 @@ const defaultTemplates: NotificationTemplate[] = [
     createdAt: 'system',
   },
   {
+    id: 'interview-passed',
+    name: '面试通过通知',
+    title: '恭喜你通过本次 AI 面试评测',
+    content:
+      '你好，{candidateName}。恭喜你在「{interviewTitle}」中达到通过标准。请及时查看评测报告，复盘优势与改进建议，并留意后续安排。',
+    createdAt: 'system',
+  },
+  {
     id: 'practice-follow-up',
     name: '练习跟进提醒',
     title: '建议继续完成本场模拟练习',
