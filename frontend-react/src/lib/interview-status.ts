@@ -37,7 +37,10 @@ export function canEnterInterview(status: number) {
 }
 
 export function canViewReport(status: number) {
-  return status === INTERVIEW_STATUS.REPORT_READY || status === INTERVIEW_STATUS.PASSED || status === INTERVIEW_STATUS.FAILED
+  return status === INTERVIEW_STATUS.COMPLETED
+    || status === INTERVIEW_STATUS.PASSED
+    || status === INTERVIEW_STATUS.REPORT_READY
+    || status === INTERVIEW_STATUS.FAILED
 }
 
 export function isInterviewFinished(status?: number) {
