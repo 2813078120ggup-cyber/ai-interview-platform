@@ -446,25 +446,6 @@ button:disabled { cursor: not-allowed; }
   overflow: hidden;
 }
 
-.login-feature-stack {
-  position: relative;
-}
-
-.login-feature-stack::before {
-  content: "";
-  position: absolute;
-  left: 22px;
-  top: 44px;
-  bottom: 44px;
-  width: 1px;
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    color-mix(in srgb, var(--accent) 24%, transparent),
-    transparent
-  );
-}
-
 .login-feature-card {
   min-height: 116px;
   display: flex;
