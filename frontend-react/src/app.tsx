@@ -9,6 +9,8 @@ import { AdminPageShell } from '@/components/admin-page-shell'
 import { CandidatePageShell } from '@/components/candidate-page-shell'
 import { PageTransition } from '@/components/page-transition'
 import { profile } from '@/lib/session'
+import { AdminAuditLog } from '@/pages/admin-audit-log'
+import { AdminCandidateDetail } from '@/pages/admin-candidate-detail'
 import { AdminCandidates } from '@/pages/admin-candidates'
 import { AdminInterviewReview } from '@/pages/admin-interview-review'
 import { AdminInterviews } from '@/pages/admin-interviews'
@@ -35,7 +37,7 @@ function Overview() {
   const stats = [['本周练习', '06', '+2 场'], ['平均能力分', '82', '+4.6'], ['待完成面试', '03', '今日'], ['AI 反馈', '18', '已生成']]
   return <div className="space-y-6">
     <div>
-      <p className="text-sm font-semibold text-emerald-600">AI INTERVIEW WORKSPACE</p>
+      <p className="text-sm font-semibold text-[var(--accent)]">AI INTERVIEW WORKSPACE</p>
       <h1 className="mt-2 text-3xl font-bold tracking-tight">让每一次面试，都成为进步。</h1>
       <p className="mt-2 text-muted-foreground">查看训练进度、开始模拟面试，并追踪你的能力变化。</p>
     </div>
@@ -47,11 +49,11 @@ function Overview() {
     <div className="grid gap-6 xl:grid-cols-[1.45fr_1fr]">
       <Card>
         <div className="flex items-center justify-between"><div><h2 className="font-bold">继续你的训练</h2><p className="mt-1 text-sm text-muted-foreground">Java 核心能力模拟面试 · 45 分钟</p></div><Badge tone="warning">待开始</Badge></div>
-        <div className="mt-7 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 p-6 text-white"><Bot className="h-7 w-7" /><h3 className="mt-5 text-xl font-bold">AI 面试官已经就绪</h3><p className="mt-2 text-sm text-emerald-50">开启语音或文字对话，获得逐题反馈与完整能力报告。</p><Button className="mt-5 bg-white text-emerald-800 hover:bg-emerald-50">开始模拟面试 <Sparkles className="h-4 w-4" /></Button></div>
+        <div className="mt-7 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] p-6 text-white"><Bot className="h-7 w-7" /><h3 className="mt-5 text-xl font-bold">AI 面试官已经就绪</h3><p className="mt-2 text-sm text-white/80">开启语音或文字对话，获得逐题反馈与完整能力报告。</p><Button className="mt-5 bg-white text-[var(--accent)] hover:bg-[var(--accent-soft)]">开始模拟面试 <Sparkles className="h-4 w-4" /></Button></div>
       </Card>
       <Card>
         <h2 className="font-bold">能力趋势</h2><p className="mt-1 text-sm text-muted-foreground">过去 6 次面试的综合表现</p>
-        <div className="mt-8 flex h-40 items-end gap-3">{[58, 65, 61, 72, 76, 82].map((value, index) => <div key={index} className="flex flex-1 flex-col items-center gap-2"><div className="w-full rounded-t-lg bg-gradient-to-t from-emerald-600 to-teal-300" style={{ height: value + '%' }} /><span className="text-xs text-muted-foreground">{index + 1}</span></div>)}</div>
+        <div className="mt-8 flex h-40 items-end gap-3">{[58, 65, 61, 72, 76, 82].map((value, index) => <div key={index} className="flex flex-1 flex-col items-center gap-2"><div className="w-full rounded-t-lg bg-gradient-to-t from-[var(--primary)] to-[var(--brand-pink)]" style={{ height: value + '%' }} /><span className="text-xs text-muted-foreground">{index + 1}</span></div>)}</div>
       </Card>
     </div>
   </div>
@@ -78,6 +80,8 @@ export function App() {
     <Route path="/admin/question-banks" element={<Protected admin><AdminPageShell><AdminQuestionBanks /></AdminPageShell></Protected>} />
     <Route path="/admin/question-banks/:id" element={<Protected admin><AdminPageShell><AdminQuestions /></AdminPageShell></Protected>} />
     <Route path="/admin/candidates" element={<Protected admin><AdminPageShell><AdminCandidates /></AdminPageShell></Protected>} />
+    <Route path="/admin/candidates/:id" element={<Protected admin><AdminPageShell><AdminCandidateDetail /></AdminPageShell></Protected>} />
+    <Route path="/admin/audit-logs" element={<Protected admin><AdminPageShell><AdminAuditLog /></AdminPageShell></Protected>} />
     <Route path="/admin" element={<Protected admin><Navigate to="/admin/workspace" replace /></Protected>} />
     <Route path="/candidate/interviews/:id/room" element={<Protected><PageTransition><InterviewRoom /></PageTransition></Protected>} />
     <Route path="/candidate/interviews/:id/report" element={<Protected><PageTransition><CandidateReport /></PageTransition></Protected>} />

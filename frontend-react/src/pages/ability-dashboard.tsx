@@ -80,7 +80,7 @@ export function AbilityDashboard() {
 
   if (!data?.latest) {
     return <div className="mx-auto max-w-xl py-20 text-center">
-      <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-emerald-50 text-emerald-600"><Sparkles /></span>
+      <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><Sparkles /></span>
       <h1 className="mt-5 text-2xl font-bold">你的能力曲线，从第一场开始</h1>
       <p className="mt-3 text-sm text-muted-foreground">{error || '完成一次面试并生成报告后，这里将展示能力变化。'}</p>
       <Button className="mt-6" onClick={() => navigate('/candidate/interviews')}>开始模拟面试</Button>
@@ -91,23 +91,23 @@ export function AbilityDashboard() {
     <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
       <div>
         <button onClick={() => navigate('/candidate/interviews')} className="mb-2 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />返回面试大厅</button>
-        <p className="text-sm font-semibold text-emerald-600">ABILITY DASHBOARD</p>
+        <p className="text-sm font-semibold text-[var(--accent)]">ABILITY DASHBOARD</p>
         <h1 className="mt-1 text-3xl font-bold">你的能力成长轨迹</h1>
         <p className="mt-2 text-muted-foreground">基于 {data.reportCount} 场已评测面试的可视化总结。</p>
       </div>
       <Button variant="secondary"><BarChart3 className="h-4 w-4" />已评测 {data.reportCount} 场</Button>
     </header>
 
-    <section className="grid gap-5 overflow-hidden rounded-[28px] bg-gradient-to-br from-emerald-700 to-teal-900 p-7 text-white md:grid-cols-[1fr_auto]">
+    <section className="grid gap-5 overflow-hidden rounded-[28px] bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] p-7 text-white md:grid-cols-[1fr_auto]">
       <div>
-        <p className="text-sm text-emerald-100">当前综合能力值</p>
+        <p className="text-sm text-white/75">当前综合能力值</p>
         <strong className="mt-2 block text-6xl tracking-tight">{data.latest.totalScore}</strong>
-        <p className="mt-4 text-sm text-emerald-50/80">最近一次：{data.latest.interviewTitle} · {day(data.latest.scheduledAt)}</p>
+        <p className="mt-4 text-sm text-white/80/80">最近一次：{data.latest.interviewTitle} · {day(data.latest.scheduledAt)}</p>
       </div>
       <div className="rounded-2xl border border-white/15 bg-white/10 px-7 py-5 text-center">
-        <p className="text-sm text-emerald-100">较上一次</p>
-        <strong className={changes.totalScore >= 0 ? 'mt-2 block text-3xl text-emerald-200' : 'mt-2 block text-3xl text-rose-200'}>{change(changes.totalScore)}</strong>
-        <p className="mt-1 text-xs text-emerald-100">综合得分变化</p>
+        <p className="text-sm text-white/75">较上一次</p>
+        <strong className={changes.totalScore >= 0 ? 'mt-2 block text-3xl text-white/80' : 'mt-2 block text-3xl text-rose-200'}>{change(changes.totalScore)}</strong>
+        <p className="mt-1 text-xs text-white/75">综合得分变化</p>
       </div>
     </section>
 
@@ -117,8 +117,8 @@ export function AbilityDashboard() {
         return <Card key={key}>
           <p className="text-sm text-muted-foreground">{label}</p>
           <div className="mt-4 flex items-center justify-between">
-            <strong className={value >= 0 ? 'text-2xl text-emerald-600' : 'text-2xl text-rose-600'}>{change(value)}</strong>
-            {value >= 0 ? <TrendingUp className="h-5 w-5 text-emerald-500" /> : <TrendingDown className="h-5 w-5 text-rose-500" />}
+            <strong className={value >= 0 ? 'text-2xl text-[var(--accent)]' : 'text-2xl text-rose-600'}>{change(value)}</strong>
+            {value >= 0 ? <TrendingUp className="h-5 w-5 text-[var(--accent)]" /> : <TrendingDown className="h-5 w-5 text-rose-500" />}
           </div>
           <p className="mt-3 text-xs text-muted-foreground">相较上一份报告</p>
         </Card>
@@ -128,7 +128,7 @@ export function AbilityDashboard() {
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.9fr)_minmax(260px,.6fr)]">
     <Card>
       <div className="flex items-start justify-between">
-        <div><p className="text-sm font-semibold text-emerald-600">HISTORICAL TREND</p><h2 className="mt-1 text-xl font-bold">历史综合能力变化</h2></div>
+        <div><p className="text-sm font-semibold text-[var(--accent)]">HISTORICAL TREND</p><h2 className="mt-1 text-xl font-bold">历史综合能力变化</h2></div>
         <span className="text-sm text-muted-foreground">按面试时间排序</span>
       </div>
       <div className="mt-8 overflow-x-auto">
@@ -159,11 +159,11 @@ export function AbilityDashboard() {
     </Card>
     <Card className="self-start overflow-hidden">
       <div>
-        <p className="text-sm font-semibold text-emerald-600">ABILITY RADAR</p>
+        <p className="text-sm font-semibold text-[var(--accent)]">ABILITY RADAR</p>
         <h2 className="mt-1 text-xl font-bold">四维能力画像</h2>
         <p className="mt-1 text-sm text-muted-foreground">最近一次面试的能力分布</p>
       </div>
-      <div className="mx-auto mt-5 max-w-[230px] rounded-[22px] border border-emerald-100/80 bg-gradient-to-b from-emerald-50/70 to-transparent p-2 dark:border-emerald-400/10 dark:from-emerald-400/5">
+      <div className="mx-auto mt-5 max-w-[230px] rounded-[22px] border border-[var(--border)]/80 bg-gradient-to-b from-[var(--accent-soft)] to-transparent p-2 dark:border-[var(--border)]/10 dark:from-[var(--brand)]/5">
         <svg viewBox="0 0 300 300" className="w-full" role="img" aria-label="专业能力、表达能力、逻辑思维和应变能力的雷达图">
           {[.25, .5, .75, 1].map(ratio => <polygon key={ratio} points={radarChart.polygon(ratio)} fill="none" stroke="currentColor" strokeOpacity=".12" strokeWidth="1" />)}
           {radarDimensions.map((item, index) => {

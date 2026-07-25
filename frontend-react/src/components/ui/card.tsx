@@ -9,7 +9,7 @@ export function Card({ className, motionDelay = 0, ...props }: CardProps) {
   const shouldReduceMotion = useReducedMotion()
 
   return <motion.section
-    className={cn('rounded-[22px] border border-border/90 bg-surface p-5 shadow-[0_1px_2px_rgba(23,34,31,.04),0_12px_34px_rgba(23,34,31,.035)]', className)}
+    className={cn('rounded-[24px] border border-border/90 bg-surface p-5 shadow-[0_1px_2px_rgba(20,18,17,.04),0_18px_45px_rgba(20,18,17,.045)]', className)}
     initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
     whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
     viewport={{ once: true, amount: 0.12 }}

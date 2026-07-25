@@ -1,2 +1,18 @@
+import type { HTMLAttributes } from 'react'
 import { cn } from '@/lib/utils'
-export function Badge({ children, tone = 'default' }: { children: React.ReactNode; tone?: 'default' | 'success' | 'warning' | 'info' }) { const tones = { default: 'border border-border bg-muted/70 text-muted-foreground', success: 'border border-emerald-100 bg-emerald-50 text-emerald-800 dark:border-emerald-400/15 dark:bg-emerald-400/10 dark:text-emerald-300', warning: 'border border-amber-100 bg-amber-50 text-amber-800 dark:border-amber-400/15 dark:bg-amber-400/10 dark:text-amber-300', info: 'border border-teal-100 bg-teal-50 text-teal-800 dark:border-teal-400/15 dark:bg-teal-400/10 dark:text-teal-300' }; return <span className={cn('inline-flex rounded-full px-2.5 py-1 text-xs font-semibold', tones[tone])}>{children}</span> }
+
+type BadgeProps = HTMLAttributes<HTMLSpanElement> & {
+  tone?: 'default' | 'success' | 'warning' | 'danger' | 'info'
+}
+
+const tones = {
+  default: 'bg-muted text-muted-foreground',
+  success: 'bg-[var(--success)] text-[var(--success-foreground)]',
+  warning: 'bg-[var(--warning)] text-[var(--warning-foreground)]',
+  danger: 'bg-[var(--danger)] text-[var(--danger-foreground)]',
+  info: 'bg-[var(--info)] text-[var(--info-foreground)]',
+}
+
+export function Badge({ className, tone = 'default', ...props }: BadgeProps) {
+  return <span className={cn('inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold', tones[tone], className)} {...props} />
+}

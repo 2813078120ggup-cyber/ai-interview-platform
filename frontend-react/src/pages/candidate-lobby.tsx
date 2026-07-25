@@ -71,7 +71,7 @@ export function CandidateLobby() {
   return <div className="space-y-6">
     <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
       <div>
-        <p className="text-sm font-semibold text-emerald-600">MY AI INTERVIEWS</p>
+        <p className="text-sm font-semibold text-[var(--accent)]">MY AI INTERVIEWS</p>
         <h1 className="mt-2 text-3xl font-bold">把准备，变成底气。</h1>
         <p className="mt-2 text-muted-foreground">选择一场安排，或开始一次专属的 AI 模拟练习。</p>
       </div>

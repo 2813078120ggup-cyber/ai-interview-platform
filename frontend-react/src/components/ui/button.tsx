@@ -1,5 +1,20 @@
-import { cva, type VariantProps } from 'class-variance-authority'
 import type { ButtonHTMLAttributes } from 'react'
 import { cn } from '@/lib/utils'
-const styles = cva('inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50', { variants: { variant: { primary: 'bg-[#12685d] text-white shadow-[0_7px_20px_rgba(18,104,93,.22)] hover:-translate-y-px hover:bg-[#0d564e] hover:shadow-[0_10px_24px_rgba(18,104,93,.28)]', secondary: 'border border-border bg-surface shadow-[0_1px_2px_rgba(23,34,31,.04)] hover:-translate-y-px hover:bg-muted', ghost: 'hover:bg-muted', danger: 'bg-rose-600 text-white shadow-[0_7px_20px_rgba(225,29,72,.16)] hover:bg-rose-700' } }, defaultVariants: { variant: 'primary' } })
-export function Button({ className, variant, ...props }: ButtonHTMLAttributes<HTMLButtonElement> & VariantProps<typeof styles>) { return <button className={cn(styles({ variant }), className)} {...props} /> }
+
+type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
+}
+
+const variants = {
+  primary: 'bg-[var(--primary)] text-[var(--primary-foreground)] shadow-[0_14px_34px_rgba(20,18,17,.18)] hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(20,18,17,.22)] dark:shadow-[0_14px_34px_rgba(0,0,0,.3)]',
+  secondary: 'border border-border bg-surface text-foreground shadow-[0_8px_26px_rgba(20,18,17,.06)] hover:-translate-y-0.5 hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]',
+  ghost: 'text-foreground hover:bg-muted',
+  danger: 'bg-rose-600 text-white hover:bg-rose-700',
+}
+
+export function Button({ className, variant = 'primary', ...props }: ButtonProps) {
+  return <button
+    className={cn('inline-flex h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-55', variants[variant], className)}
+    {...props}
+  />
+}
