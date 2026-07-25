@@ -25,6 +25,8 @@ import org.springframework.stereotype.Component;
 public class XunfeiVirtualHumanClient {
     private static final String START_PATH = "/v1/private/vms2d_start";
     private static final String CTRL_PATH = "/v1/private/vms2d_ctrl";
+    private static final String DEFAULT_AVATAR_ID = "118801001";
+    private static final String DEFAULT_VOICE_NAME = "x3_qianxue";
 
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(8)).build();
@@ -34,36 +36,54 @@ public class XunfeiVirtualHumanClient {
     }
 
     public SessionResult start(AiProviderService.RuntimeProvider provider) throws Exception {
+        Map<String, Object> stream = new LinkedHashMap<>();
+        stream.put("protocol", "xrtc");
+
         Map<String, Object> vmr = new LinkedHashMap<>();
-        vmr.put("avatar_id", provider.avatarModel());
-        vmr.put("service_id", provider.serviceId());
+        vmr.put("stream", stream);
+        vmr.put("avatar_id", normalizedAvatarId(provider.avatarModel()));
         vmr.put("width", 1280);
         vmr.put("height", 720);
-        vmr.put("protocol", "rtmp");
 
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("header", Map.of("app_id", provider.appId(), "status", 3));
+        body.put("header", Map.of("app_id", provider.appId(), "uid", ""));
         body.put("parameter", Map.of("vmr", vmr));
         JsonNode response = send(provider, START_PATH, body);
 
-        String sessionId = firstText(response, "session_id", "sessionId", "sid").orElse("");
-        String streamUrl = firstText(response, "stream_url", "streamUrl", "play_url", "playUrl", "url").orElse("");
+        String sessionId = firstText(response, "session", "session_id", "sessionId").orElse("");
+        String streamUrl = payloadText(response, "/payload/stream_url/text")
+                .or(() -> firstText(response, "stream_url", "streamUrl", "play_url", "playUrl", "url"))
+                .orElse("");
         return new SessionResult(sessionId, streamUrl, response.toString());
     }
 
     public JsonNode control(AiProviderService.RuntimeProvider provider, String sessionId, String text) throws Exception {
         Map<String, Object> textPayload = new LinkedHashMap<>();
         textPayload.put("encoding", "utf8");
+        textPayload.put("compress", "raw");
+        textPayload.put("format", "plain");
         textPayload.put("status", 3);
+        textPayload.put("seq", 1);
         textPayload.put("text", Base64.getEncoder().encodeToString(text.getBytes(StandardCharsets.UTF_8)));
 
+        Map<String, Object> ctrlPayload = new LinkedHashMap<>();
+        ctrlPayload.put("encoding", "utf8");
+        ctrlPayload.put("compress", "raw");
+        ctrlPayload.put("format", "json");
+        ctrlPayload.put("status", 3);
+        ctrlPayload.put("seq", 1);
+        ctrlPayload.put("text", Base64.getEncoder().encodeToString("{}".getBytes(StandardCharsets.UTF_8)));
+
+        Map<String, Object> tts = new LinkedHashMap<>();
+        tts.put("vcn", provider.voiceModel().isBlank() ? DEFAULT_VOICE_NAME : provider.voiceModel());
+        tts.put("speed", 50);
+        tts.put("pitch", 50);
+        tts.put("volume", 50);
+
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("header", Map.of("app_id", provider.appId(), "session_id", sessionId, "status", 3));
-        body.put("parameter", Map.of(
-                "tts", Map.of("vcn", provider.voiceModel().isBlank() ? "x4_lingxiaoxuan_oral" : provider.voiceModel()),
-                "vmr", Map.of("service_id", provider.serviceId(), "avatar_id", provider.avatarModel())
-        ));
-        body.put("payload", Map.of("text", textPayload));
+        body.put("header", Map.of("app_id", provider.appId(), "session", sessionId, "uid", ""));
+        body.put("parameter", Map.of("tts", tts));
+        body.put("payload", Map.of("text", textPayload, "ctrl_w", ctrlPayload));
         return send(provider, CTRL_PATH, body);
     }
 
@@ -78,7 +98,9 @@ public class XunfeiVirtualHumanClient {
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         JsonNode node = objectMapper.readTree(response.body().isBlank() ? "{}" : response.body());
         if (response.statusCode() < 200 || response.statusCode() >= 300 || responseCode(node) != 0) {
-            throw new IllegalStateException("讯飞虚拟人接口返回异常：" + response.statusCode() + " / " + responseCode(node));
+            String message = firstText(node, "message", "desc", "sid").orElse(node.toString());
+            throw new IllegalStateException("讯飞虚拟人接口返回异常："
+                    + response.statusCode() + " / " + responseCode(node) + " / " + message);
         }
         return node;
     }
@@ -115,6 +137,24 @@ public class XunfeiVirtualHumanClient {
         if (headerCode.isNumber()) return headerCode.asInt();
         JsonNode code = node.get("code");
         return code != null && code.isNumber() ? code.asInt() : 0;
+    }
+
+    private String normalizedAvatarId(String avatarModel) {
+        String value = avatarModel == null ? "" : avatarModel.trim();
+        if (value.isBlank()) return DEFAULT_AVATAR_ID;
+        int separator = value.indexOf(':');
+        String normalized = separator >= 0 ? value.substring(separator + 1).trim() : value;
+        return normalized.isBlank() ? DEFAULT_AVATAR_ID : normalized;
+    }
+
+    private Optional<String> payloadText(JsonNode node, String pointer) {
+        JsonNode target = node.at(pointer);
+        if (!target.isTextual() || target.asText().isBlank()) return Optional.empty();
+        try {
+            return Optional.of(new String(Base64.getDecoder().decode(target.asText()), StandardCharsets.UTF_8));
+        } catch (IllegalArgumentException exception) {
+            return Optional.of(target.asText());
+        }
     }
 
     private Optional<String> firstText(JsonNode node, String... names) {
