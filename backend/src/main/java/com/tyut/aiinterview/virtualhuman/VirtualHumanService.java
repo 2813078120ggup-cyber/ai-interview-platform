@@ -38,12 +38,13 @@ public class VirtualHumanService {
                 return fallback("讯飞虚拟人未返回会话 ID，已降级为本地数字人", request.text());
             }
             xunfeiClient.control(provider, sessionId, request.text());
+            boolean hasStream = !streamUrl.isBlank();
             return new VirtualHumanDtos.SpeakResponse(
-                    true,
+                    hasStream,
                     provider.name(),
                     "xunfei-virtual-human",
-                    "SPEAKING",
-                    streamUrl.isBlank() ? "讯飞虚拟人已接收播报文本" : "讯飞虚拟人会话已启动",
+                    hasStream ? "SPEAKING" : "NO_STREAM",
+                    hasStream ? "讯飞虚拟人会话已启动" : "讯飞虚拟人已接收播报文本，但没有返回可播放视频流，已使用本地语音兜底",
                     sessionId,
                     streamUrl,
                     request.text()

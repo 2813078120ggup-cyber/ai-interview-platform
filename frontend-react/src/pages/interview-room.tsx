@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { AlertTriangle, ArrowLeft, Camera, CheckCircle2, ChevronLeft, ChevronRight, Loader2, Mic, Send, Sparkles, Square, Volume2, VolumeX } from 'lucide-react'
+import mpegts from 'mpegts.js'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
@@ -50,7 +51,10 @@ const remainingText = (seconds: number) => String(Math.floor(seconds / 60)).padS
 const roomStateKey = (id: string) => `interviewos_room_state_${id}`
 const draftKey = (id: string, questionId: string) => `interviewos_answer_draft_${id}_${questionId}`
 const browserPlayableVideo = (url: string) => /\.(mp4|webm|ogg)(\?|#|$)/i.test(url)
-const embeddableVirtualUrl = (url: string) => /^https?:\/\//i.test(url) && !browserPlayableVideo(url) && !/\.m3u8(\?|#|$)/i.test(url)
+const flvVirtualUrl = (url: string) => /\.flv(\?|#|$)/i.test(url) || /[?&](format|type)=flv(&|$)/i.test(url)
+const hlsVirtualUrl = (url: string) => /\.m3u8(\?|#|$)/i.test(url)
+const embeddableVirtualUrl = (url: string) => /^https?:\/\//i.test(url) && !browserPlayableVideo(url) && !flvVirtualUrl(url) && !hlsVirtualUrl(url)
+const renderableVirtualStream = (url: string) => browserPlayableVideo(url) || (flvVirtualUrl(url) && mpegts.getFeatureList().mseLivePlayback) || embeddableVirtualUrl(url)
 
 export function InterviewRoom() {
   const { id = '' } = useParams()
@@ -79,6 +83,8 @@ export function InterviewRoom() {
   const [finishMessage, setFinishMessage] = useState('')
   const [limits, setLimits] = useState<Record<string, number>>({})
   const video = useRef<HTMLVideoElement>(null)
+  const virtualVideo = useRef<HTMLVideoElement>(null)
+  const virtualPlayer = useRef<ReturnType<typeof mpegts.createPlayer> | null>(null)
   const stream = useRef<MediaStream | null>(null)
   const recognition = useRef<SpeechRecognitionLike | null>(null)
   const speechToken = useRef(0)
@@ -90,8 +96,9 @@ export function InterviewRoom() {
   const followUps = messages.filter(item => item.role === 'assistant').length
   const limit = question ? limits[question.interviewQuestionId] ?? FOLLOW_UP_MAX : FOLLOW_UP_MAX
   const virtualStreamPlayable = browserPlayableVideo(virtualStreamUrl)
+  const virtualStreamFlv = flvVirtualUrl(virtualStreamUrl)
   const virtualStreamEmbeddable = embeddableVirtualUrl(virtualStreamUrl)
-  const virtualStreamUnsupported = Boolean(virtualStreamUrl) && !virtualStreamPlayable && !virtualStreamEmbeddable
+  const virtualStreamUnsupported = Boolean(virtualStreamUrl) && !virtualStreamPlayable && !virtualStreamFlv && !virtualStreamEmbeddable
 
   useEffect(() => {
     let cancelled = false
@@ -149,8 +156,31 @@ export function InterviewRoom() {
   useEffect(() => () => {
     stream.current?.getTracks().forEach(track => track.stop())
     recognition.current?.stop()
+    virtualPlayer.current?.destroy()
     window.speechSynthesis?.cancel()
   }, [])
+
+  useEffect(() => {
+    virtualPlayer.current?.destroy()
+    virtualPlayer.current = null
+    if (!virtualStreamFlv || !virtualVideo.current) return
+    if (!mpegts.getFeatureList().mseLivePlayback) {
+      setVirtualActive(false)
+      setVirtualMessage('讯飞返回了 FLV 直播流，但当前浏览器不支持 MSE 播放，已使用本地语音兜底')
+      return
+    }
+    const player = mpegts.createPlayer({ type: 'flv', url: virtualStreamUrl, isLive: true })
+    virtualPlayer.current = player
+    player.attachMediaElement(virtualVideo.current)
+    player.load()
+    void virtualVideo.current.play().catch(() => {
+      setVirtualMessage('讯飞虚拟人视频流已就绪；如未自动出声，请点击播放器播放')
+    })
+    return () => {
+      player.destroy()
+      if (virtualPlayer.current === player) virtualPlayer.current = null
+    }
+  }, [virtualStreamFlv, virtualStreamUrl])
 
   async function waitTask(taskId: string) {
     for (let attempt = 0; attempt < 90; attempt += 1) {
@@ -180,11 +210,16 @@ export function InterviewRoom() {
         method: 'POST',
         body: JSON.stringify({ text, sessionId: virtualSessionId, interviewQuestionId: question?.interviewQuestionId }),
       })
-      setVirtualActive(result.enabled)
-      setVirtualMessage(result.message || (result.enabled ? '讯飞虚拟人正在播报' : '本地数字人播报'))
+      const nextStreamUrl = (result.streamUrl || virtualStreamUrl).trim()
+      const canRender = result.enabled && Boolean(nextStreamUrl) && renderableVirtualStream(nextStreamUrl)
+      setVirtualActive(canRender)
+      setVirtualMessage(
+        result.message ||
+        (canRender ? '讯飞虚拟人正在播报' : result.enabled ? '讯飞虚拟人未返回可播放画面，已使用本地语音兜底' : '本地数字人播报'),
+      )
       if (result.sessionId) setVirtualSessionId(result.sessionId)
-      if (result.streamUrl) setVirtualStreamUrl(result.streamUrl)
-      return result.enabled
+      setVirtualStreamUrl(nextStreamUrl)
+      return canRender
     } catch (reason) {
       setVirtualActive(false)
       setVirtualMessage(reason instanceof Error ? reason.message : '虚拟人服务暂不可用，已降级本地朗读')
@@ -392,9 +427,10 @@ export function InterviewRoom() {
         <Card className="overflow-hidden p-0">
           <div className="relative min-h-[360px] overflow-hidden bg-[radial-gradient(circle_at_50%_16%,rgba(235,214,255,.75),transparent_36%),linear-gradient(180deg,#fff7fb_0%,#f2ebe2_100%)] dark:bg-[radial-gradient(circle_at_50%_16%,rgba(120,88,170,.35),transparent_36%),linear-gradient(180deg,#211b19_0%,#151210_100%)]">
             <div className="absolute left-4 top-4 z-20 rounded-full border border-white/55 bg-white/75 px-3 py-1 text-xs font-bold text-[#8a5f3f] shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/10 dark:text-amber-100">
-              {virtualActive ? '讯飞虚拟人已接入' : '本地数字人兜底'}
+              {virtualActive ? '讯飞虚拟人已接入' : virtualStreamUrl ? '本地语音兜底' : '本地数字人兜底'}
             </div>
-            {virtualStreamPlayable && <video src={virtualStreamUrl} autoPlay muted playsInline controls className="absolute inset-0 h-full w-full object-cover" />}
+            {virtualStreamPlayable && <video src={virtualStreamUrl} autoPlay playsInline controls className="absolute inset-0 h-full w-full object-cover" />}
+            {virtualStreamFlv && <video ref={virtualVideo} autoPlay playsInline controls className="absolute inset-0 h-full w-full object-cover" />}
             {virtualStreamEmbeddable && <iframe src={virtualStreamUrl} title="讯飞虚拟人" className="absolute inset-0 h-full w-full border-0" allow="autoplay; microphone; camera; fullscreen" />}
             {!virtualStreamUrl && <div className="absolute inset-0 grid place-items-center">
               <div className="relative grid h-56 w-56 place-items-center">
@@ -414,7 +450,7 @@ export function InterviewRoom() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="font-bold">{virtualActive ? '讯飞虚拟面试官' : 'AI 面试官'}</p>
-                  <p className="mt-1 line-clamp-2 text-xs leading-5 opacity-75">{virtualLoading ? '正在连接虚拟人服务…' : virtualMessage}</p>
+                  <p className="mt-1 text-xs leading-5 opacity-75">{virtualLoading ? '正在连接虚拟人服务…' : virtualMessage}</p>
                 </div>
                 <span className={'mt-1 h-2.5 w-2.5 shrink-0 rounded-full ' + (virtualActive ? 'bg-emerald-500 shadow-[0_0_14px_rgba(16,185,129,.7)]' : 'bg-amber-500')} />
               </div>
