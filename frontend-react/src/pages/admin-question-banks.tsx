@@ -429,13 +429,13 @@ export function AdminQuestionBanks() {
     </div>}
 
     {importOpen && <div className="fixed inset-0 z-50 overflow-y-auto bg-black/35 p-4 backdrop-blur-sm">
-      <div className="mx-auto my-8 max-w-5xl rounded-[30px] bg-surface p-7 shadow-2xl">
+      <div className="mx-auto my-8 w-full max-w-[min(1180px,calc(100vw-2rem))] overflow-hidden rounded-[30px] bg-surface p-5 shadow-2xl sm:p-7">
         <div className="flex items-start justify-between">
           <div><p className="text-sm font-semibold text-[var(--accent)]">EXCEL IMPORT</p><h2 className="mt-1 text-2xl font-bold">题库批量导入</h2><p className="mt-2 text-sm text-muted-foreground">CSV/TSV 可直接解析预览，Excel 请先另存为 CSV。</p></div>
           <button onClick={() => setImportOpen(false)} className="rounded-full p-2 hover:bg-muted"><X className="h-5 w-5" /></button>
         </div>
-        <div className="mt-6 grid gap-5 lg:grid-cols-[320px_1fr]">
-          <Card className="bg-[var(--accent-soft)]">
+        <div className="mt-6 grid min-w-0 gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
+          <Card className="min-w-0 bg-[var(--accent-soft)]">
             <h3 className="font-bold">导入设置</h3>
             <label className="mt-5 block text-sm font-semibold">目标题库<select value={bankId} onChange={event => setBankId(event.target.value)} className="mt-2 h-12 w-full rounded-2xl border border-border bg-surface px-4 font-normal">
               <option value="">选择题库</option>
@@ -449,13 +449,13 @@ export function AdminQuestionBanks() {
             </label>
             <Button variant="secondary" className="mt-5 w-full" onClick={downloadTemplate}>下载模板</Button>
           </Card>
-          <Card className="p-0">
-            <div className="flex items-center justify-between border-b border-border p-5">
+          <Card className="min-w-0 overflow-hidden p-0">
+            <div className="flex flex-col gap-3 border-b border-border p-5 sm:flex-row sm:items-center sm:justify-between">
               <div><h3 className="font-bold">导入预览</h3><p className="mt-1 text-sm text-muted-foreground">已解析 {preview.length} 道题。</p></div>
-              <Button disabled={importing || !preview.length} onClick={() => void submitImport()}>{importing ? '导入中…' : '提交导入'}</Button>
+              <Button className="w-full sm:w-auto" disabled={importing || !preview.length} onClick={() => void submitImport()}>{importing ? '导入中…' : '提交导入'}</Button>
             </div>
-            <div className="max-h-[520px] overflow-auto">
-              <table className="w-full min-w-[760px] text-left text-sm">
+            <div className="max-h-[520px] w-full overflow-auto">
+              <table className="w-full min-w-[680px] text-left text-sm">
                 <thead className="sticky top-0 border-b border-border bg-surface text-xs text-muted-foreground"><tr><th className="px-4 py-3">题型</th><th className="px-4 py-3">难度</th><th className="px-4 py-3">题目内容</th><th className="px-4 py-3">标签</th><th className="px-4 py-3">分值</th></tr></thead>
                 <tbody>
                   {preview.slice(0, 80).map((item, index) => <tr key={index} className="border-b border-border/70"><td className="px-4 py-3"><Badge tone="info">{item.questionType}</Badge></td><td className="px-4 py-3">{item.difficulty}</td><td className="max-w-xl px-4 py-3 leading-6">{item.content}</td><td className="px-4 py-3 text-muted-foreground">{item.tags || '-'}</td><td className="px-4 py-3">{item.score}</td></tr>)}
