@@ -21,6 +21,10 @@ const FOLLOW_UP_MIN = 2
 const FOLLOW_UP_MAX = 5
 const choiceTypes = ['single_choice', 'multiple_choice', 'true_false']
 const sdkEntry = '/sdk/avatar-sdk-web_3.2.3.1002/esm/index.js'
+// The iFlytek 3.2 Web SDK converts this bps input to kbps before submitting
+// `parameter.avatar.stream.bitrate`. Keep it well above the service minimum
+// of 200 kbps; 800000 bps is transmitted as roughly 781 kbps.
+const xunfeiStreamBitrateBps = 800_000
 const roomStateKey = (id: string) => `interviewos_room_state_${id}`
 const draftKey = (id: string, questionId: string) => `interviewos_answer_draft_${id}_${questionId}`
 const remainingText = (seconds: number) => String(Math.floor(seconds / 60)).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0')
@@ -233,7 +237,7 @@ export function InterviewRoom() {
       }
       avatar.setApiInfo({ signedUrl: config.signedUrl, appId: config.appId, sceneId: config.sceneId })
       avatar.setGlobalParams({
-        stream: { protocol: 'xrtc', fps: 25, bitrate: 2000, alpha: 1 },
+        stream: { protocol: 'xrtc', fps: 25, bitrate: xunfeiStreamBitrateBps, alpha: 1 },
         avatar: { avatar_id: config.avatarId, width: 720, height: 1280 },
         tts: { vcn: config.vcn, speed: 50, pitch: 50, volume: 50 },
         subtitle: { subtitle: 1, font_color: '#FFFFFF' },

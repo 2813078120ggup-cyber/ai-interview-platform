@@ -41,3 +41,9 @@
 - SDK 目录保持在 `frontend-react/public/sdk/`，保证 `index.js` 与 XRTC/WebRTC 动态播放器分包同目录部署。
 - 不再让 Vite 在源码转换期解析 `/public` 中的 SDK；前端使用浏览器绝对 URL 与 `@vite-ignore` 在运行时导入入口文件。
 - 这样开发服务器和生产 Nginx 都以静态资源方式提供 SDK，同时 SDK 的内部相对动态导入路径保持正确。
+
+## 2026-07-26 补丁：XRTC 码率下限
+
+- 讯飞 Web SDK 3.2 会把 `setGlobalParams().stream.bitrate` 的输入值按 bps 转为提交给服务端的 kbps。
+- 原值 `2000` 被 SDK 转换后约为 `1 kbps`，触发接口校验：`$.parameter.avatar.stream.bitrate value must be larger or equal than 200`。
+- 现改为 `800000 bps`，服务端实际收到约 `781 kbps`，满足 XRTC 最低 `200 kbps` 限制并保留稳定画面与音频余量。
