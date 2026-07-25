@@ -73,6 +73,7 @@ public class InterviewService {
     public Interview create(InterviewDtos.CreateRequest request) {
         requireManager();
         validateType(request.type());
+        String interviewerStyle = normalizeInterviewerStyle(request.interviewerStyle());
         ensureActiveCandidate(request.candidateId());
         if (request.positionId() != null && positionMapper.selectById(request.positionId()) == null) {
             throw BusinessException.badRequest("关联岗位不存在");
@@ -88,7 +89,7 @@ public class InterviewService {
         interview.setStatus(Interview.PENDING);
         interview.setType(request.type());
         interview.setMeetingUrl(request.meetingUrl());
-        interview.setRemark(request.remark());
+        interview.setRemark(mergeRemark(request.remark(), interviewerStyle));
         interview.setCreatedBy(currentUser.id());
         interviewMapper.insert(interview);
         for (int index = 0; index < questions.size(); index++) {
@@ -116,6 +117,7 @@ public class InterviewService {
     @Transactional
     public Interview createPractice(InterviewDtos.PracticeRequest request) {
         if (!currentUser.hasRole("CANDIDATE")) throw BusinessException.forbidden("仅候选人可创建模拟练习");
+        String interviewerStyle = normalizeInterviewerStyle(request.interviewerStyle());
         QuestionBank bank = questionBankMapper.selectById(request.questionBankId());
         if (bank == null || bank.getStatus() != 1 || bank.getVisibility() != 2) throw BusinessException.notFound("练习题库不存在或未公开");
         List<Question> questions = questionMapper.selectList(new LambdaQueryWrapper<Question>().eq(Question::getBankId, bank.getId())
@@ -125,7 +127,7 @@ public class InterviewService {
         Interview practice = new Interview();
         practice.setTitle(bank.getName() + " · 模拟练习"); practice.setCandidateId(currentUser.id()); practice.setInterviewerId(currentUser.id());
         practice.setScheduledAt(now); practice.setStartedAt(now); practice.setDuration(request.duration()); practice.setStatus(Interview.IN_PROGRESS);
-        practice.setType("ai"); practice.setRemark("candidate-practice"); practice.setCreatedBy(currentUser.id()); interviewMapper.insert(practice);
+        practice.setType("ai"); practice.setRemark(mergeRemark("candidate-practice", interviewerStyle)); practice.setCreatedBy(currentUser.id()); interviewMapper.insert(practice);
         for (int index = 0; index < questions.size(); index++) {
             Question question = questions.get(index); InterviewQuestion selected = new InterviewQuestion();
             selected.setInterviewId(practice.getId()); selected.setQuestionId(question.getId()); selected.setSequenceNo(index + 1);
@@ -372,6 +374,22 @@ public class InterviewService {
 
     private void validateType(String type) {
         if (!INTERVIEW_TYPES.contains(type)) throw BusinessException.badRequest("面试类型不合法");
+    }
+
+    private String normalizeInterviewerStyle(String style) {
+        if (style == null || style.isBlank()) return "big-tech";
+        String normalized = style.trim();
+        Set<String> allowed = Set.of("gentle", "pressure", "big-tech", "hr", "project-deep", "campus-basic");
+        if (!allowed.contains(normalized)) throw BusinessException.badRequest("AI 面试官风格不合法");
+        return normalized;
+    }
+
+    private String mergeRemark(String remark, String interviewerStyle) {
+        String base = remark == null ? "" : remark.trim();
+        String marker = "interviewerStyle=" + interviewerStyle;
+        if (base.isBlank()) return marker;
+        if (base.contains("interviewerStyle=")) return base.replaceAll("interviewerStyle=[a-zA-Z0-9-]+", marker);
+        return base + ";" + marker;
     }
 
     private void validateJson(String value, String fieldName) {

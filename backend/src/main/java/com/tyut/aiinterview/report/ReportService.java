@@ -1,6 +1,8 @@
 package com.tyut.aiinterview.report;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.tyut.aiinterview.ai.DeepSeekGateway;
 import com.tyut.aiinterview.common.BusinessException;
 import com.tyut.aiinterview.common.PageResult;
 import com.tyut.aiinterview.domain.Evaluation;
@@ -30,10 +32,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class ReportService {
     private final ReportMapper reportMapper; private final InterviewMapper interviewMapper; private final InterviewQuestionMapper questionMapper;
     private final EvaluationMapper evaluationMapper; private final UserMapper userMapper; private final CurrentUser currentUser;
+    private final DeepSeekGateway deepSeekGateway;
     public ReportService(ReportMapper reportMapper, InterviewMapper interviewMapper, InterviewQuestionMapper questionMapper,
-                         EvaluationMapper evaluationMapper, UserMapper userMapper, CurrentUser currentUser) {
+                         EvaluationMapper evaluationMapper, UserMapper userMapper, CurrentUser currentUser, DeepSeekGateway deepSeekGateway) {
         this.reportMapper = reportMapper; this.interviewMapper = interviewMapper; this.questionMapper = questionMapper;
-        this.evaluationMapper = evaluationMapper; this.userMapper = userMapper; this.currentUser = currentUser;
+        this.evaluationMapper = evaluationMapper; this.userMapper = userMapper; this.currentUser = currentUser; this.deepSeekGateway = deepSeekGateway;
     }
     @Transactional
     public Report generate(Long interviewId) {
@@ -73,6 +76,25 @@ public class ReportService {
         if (report == null) throw BusinessException.notFound("报告尚未生成");
         if (id.equals(interview.getCandidateId()) && report.getStatus() != 1) throw BusinessException.forbidden("报告尚未发布");
         return report;
+    }
+    public ReportDtos.TrainingPlan trainingPlan(Long interviewId) {
+        Interview interview = interviewMapper.selectById(interviewId);
+        if (interview == null) throw BusinessException.notFound("面试不存在");
+        Report report = get(interviewId);
+        try {
+            JsonNode node = deepSeekGateway.generateTrainingPlan(trainingContext(interview, report));
+            return new ReportDtos.TrainingPlan(
+                    text(node, "priority", weakestPriority(report)),
+                    integer(node, "durationDays", 7),
+                    texts(node.path("focusAreas"), fallbackFocusAreas(report)),
+                    days(node.path("dailyPlan"), fallbackDays(report)),
+                    texts(node.path("recommendedBanks"), fallbackBanks(report)),
+                    texts(node.path("interviewDrills"), fallbackDrills(report)),
+                    texts(node.path("successCriteria"), fallbackCriteria(report)),
+                    "ai");
+        } catch (RuntimeException exception) {
+            return fallbackPlan(report);
+        }
     }
     @Transactional
     public Report publish(Long interviewId) {
@@ -146,4 +168,109 @@ public class ReportService {
                 .setScale(2, RoundingMode.HALF_UP);
     }
     private void requireHr() { if (!currentUser.hasRole("ADMIN")) throw BusinessException.forbidden("仅管理员可生成报告"); }
+
+    private String trainingContext(Interview interview, Report report) {
+        return """
+                面试主题：%s
+                综合分：%s
+                专业能力：%s
+                表达能力：%s
+                逻辑思维：%s
+                应变能力：%s
+                综合结论：%s
+                优势：%s
+                待提升项：%s
+                改进建议：%s
+                """.formatted(interview.getTitle(), report.getTotalScore(), report.getProfessionalScore(), report.getExpressionScore(),
+                report.getLogicScore(), report.getAdaptabilityScore(), report.getSummary(), report.getStrengths(),
+                report.getWeaknesses(), report.getImprovementSuggestions());
+    }
+
+    private ReportDtos.TrainingPlan fallbackPlan(Report report) {
+        return new ReportDtos.TrainingPlan(weakestPriority(report), 7, fallbackFocusAreas(report), fallbackDays(report),
+                fallbackBanks(report), fallbackDrills(report), fallbackCriteria(report), "rule");
+    }
+
+    private List<String> fallbackFocusAreas(Report report) {
+        String weakest = weakestDimension(report);
+        return switch (weakest) {
+            case "专业能力" -> List.of("补齐 Java / MySQL / Spring 核心知识", "每道题回答必须覆盖原理、场景、边界和例子", "用题库进行专项强化");
+            case "表达能力" -> List.of("使用 STAR / 背景-行动-结果 结构回答", "练习两分钟项目复盘", "减少口头禅和跳跃式表达");
+            case "逻辑思维" -> List.of("训练问题拆解和推理链路", "用算法题和系统设计题练习边界分析", "回答前先给结论再展开依据");
+            default -> List.of("强化追问下的临场反应", "练习不知道时的拆解表达", "模拟压力追问并复盘调整");
+        };
+    }
+
+    private List<ReportDtos.TrainingDay> fallbackDays(Report report) {
+        String weakest = weakestDimension(report);
+        return List.of(
+                day(1, "定位短板", "复盘本次报告，整理最低分维度的 5 个具体问题", "选 10 道相关题目做口头回答", "记录每题回答是否包含结论、原因和例子"),
+                day(2, weakest + "专项训练", "完成 20 道专项题", "每题控制在 2 分钟内回答", "用录音回听并标记表达断点"),
+                day(3, "项目表达重构", "准备一个项目的背景、职责、难点、结果", "用 STAR 结构输出 2 版回答", "补充数据结果和个人贡献"),
+                day(4, "追问强化", "针对 5 个回答继续自问 2 层为什么", "练习边界、异常和取舍说明", "把不会的问题转化为分析过程"),
+                day(5, "综合模拟", "完成一场 30 分钟模拟面试", "重点观察最低分维度是否提升", "记录 3 个仍然卡住的问题"),
+                day(6, "查漏补缺", "补齐前一天卡住的问题", "整理一页常用回答模板", "再完成 10 道同类题"),
+                day(7, "复测与总结", "重新进行一次模拟面试", "对比本次报告与上次报告", "沉淀下一轮训练目标"));
+    }
+
+    private ReportDtos.TrainingDay day(int day, String title, String... tasks) {
+        return new ReportDtos.TrainingDay(day, title, List.of(tasks));
+    }
+
+    private List<String> fallbackBanks(Report report) {
+        return switch (weakestDimension(report)) {
+            case "专业能力" -> List.of("Java 核心基础题库", "MySQL 数据库题库", "Spring 与微服务题库");
+            case "表达能力" -> List.of("HR 综合素质题库", "项目复盘表达训练", "STAR 行为面试训练");
+            case "逻辑思维" -> List.of("算法与数据结构题库", "系统设计场景题", "数据库性能优化题");
+            default -> List.of("压力追问模拟", "项目深挖模拟", "综合素质面试");
+        };
+    }
+
+    private List<String> fallbackDrills(Report report) {
+        return List.of("温和型面试官完成基础复盘", "大厂技术面模式完成技术深挖", "压迫型面试官完成抗压追问");
+    }
+
+    private List<String> fallbackCriteria(Report report) {
+        return List.of("最低分维度提升 8 分以上", "每个核心问题能在 2 分钟内结构化回答", "至少完成 2 次完整模拟面试并生成报告");
+    }
+
+    private String weakestPriority(Report report) {
+        return "当前最需要优先提升：" + weakestDimension(report) + "。建议先完成 7 天专项训练，再进行一次完整模拟复测。";
+    }
+
+    private String weakestDimension(Report report) {
+        BigDecimal min = report.getProfessionalScore();
+        String label = "专业能力";
+        if (report.getExpressionScore().compareTo(min) < 0) { min = report.getExpressionScore(); label = "表达能力"; }
+        if (report.getLogicScore().compareTo(min) < 0) { min = report.getLogicScore(); label = "逻辑思维"; }
+        if (report.getAdaptabilityScore().compareTo(min) < 0) label = "应变能力";
+        return label;
+    }
+
+    private String text(JsonNode node, String field, String fallback) {
+        String value = node.path(field).asText("");
+        return value.isBlank() ? fallback : value;
+    }
+
+    private Integer integer(JsonNode node, String field, Integer fallback) {
+        return node.path(field).canConvertToInt() ? node.path(field).asInt() : fallback;
+    }
+
+    private List<String> texts(JsonNode node, List<String> fallback) {
+        if (!node.isArray() || node.isEmpty()) return fallback;
+        List<String> values = new java.util.ArrayList<>();
+        node.forEach(item -> {
+            String value = item.asText("");
+            if (!value.isBlank()) values.add(value);
+        });
+        return values.isEmpty() ? fallback : values;
+    }
+
+    private List<ReportDtos.TrainingDay> days(JsonNode node, List<ReportDtos.TrainingDay> fallback) {
+        if (!node.isArray() || node.isEmpty()) return fallback;
+        List<ReportDtos.TrainingDay> values = new java.util.ArrayList<>();
+        node.forEach(item -> values.add(new ReportDtos.TrainingDay(item.path("day").asInt(values.size() + 1),
+                text(item, "title", "专项训练"), texts(item.path("tasks"), List.of("完成专项练习并复盘")))));
+        return values.isEmpty() ? fallback : values;
+    }
 }

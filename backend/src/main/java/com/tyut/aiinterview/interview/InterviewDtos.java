@@ -20,7 +20,8 @@ public final class InterviewDtos {
                                 @NotNull @Min(1) @Max(480) Integer duration, @NotBlank String type,
                                 @Size(max = 512) String meetingUrl, @Size(max = 500) String remark,
                                 @Size(max = 20) List<Long> questionIds, Long questionBankId,
-                                @Min(1) @Max(20) Integer questionCount) {
+                                @Min(1) @Max(20) Integer questionCount,
+                                @Size(max = 32) String interviewerStyle) {
     }
 
     public record RescheduleRequest(@NotNull @Future LocalDateTime scheduledAt,
@@ -29,7 +30,8 @@ public final class InterviewDtos {
 
     public record PracticeRequest(@NotNull Long questionBankId,
                                   @NotNull @Min(1) @Max(10) Integer questionCount,
-                                  @NotNull @Min(10) @Max(180) Integer duration) {
+                                  @NotNull @Min(10) @Max(180) Integer duration,
+                                  @Size(max = 32) String interviewerStyle) {
     }
 
     public record PracticeBankView(Long id, String name, String description, Long questionCount) {

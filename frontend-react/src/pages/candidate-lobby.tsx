@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { type Interview, type PracticeBank, request } from '@/lib/api'
 import { canEnterInterview, canViewReport, interviewStatusText, interviewStatusTone, isReportPending } from '@/lib/interview-status'
+import { interviewerStyleFromRemark, interviewerStyleLabel, interviewerStyles, isPracticeInterview, type InterviewerStyleKey } from '@/lib/interviewer-styles'
 
 export function CandidateLobby() {
   const [items, setItems] = useState<Interview[]>([])
@@ -15,6 +16,7 @@ export function CandidateLobby() {
   const [status, setStatus] = useState('')
   const [open, setOpen] = useState(false)
   const [bank, setBank] = useState('')
+  const [style, setStyle] = useState<InterviewerStyleKey>('big-tech')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const nav = useNavigate()
@@ -52,7 +54,7 @@ export function CandidateLobby() {
     try {
       const result = await request<Interview>('/v1/interviews/practice', {
         method: 'POST',
-        body: JSON.stringify({ questionBankId: bank, questionCount: 5, duration: 30 }),
+        body: JSON.stringify({ questionBankId: bank, questionCount: 5, duration: 30, interviewerStyle: style }),
       })
       nav(`/candidate/interviews/${result.id}/room`)
     } catch (reason) {
@@ -103,7 +105,7 @@ export function CandidateLobby() {
           className="rounded-2xl border border-border p-5 transition hover:shadow-lg"
         >
           <div className="flex justify-between">
-            <span className="text-sm text-muted-foreground">{item.remark === 'candidate-practice' ? '个人模拟练习' : 'AI 模拟面试'}</span>
+            <span className="text-sm text-muted-foreground">{isPracticeInterview(item.remark) ? '个人模拟练习' : 'AI 模拟面试'} · {interviewerStyleLabel(interviewerStyleFromRemark(item.remark))}</span>
             <Badge tone={interviewStatusTone(item.status)}>{interviewStatusText[item.status] ?? '未知状态'}</Badge>
           </div>
           <h2 className="mt-5 text-lg font-bold">{item.title}</h2>
@@ -131,6 +133,22 @@ export function CandidateLobby() {
           <option value="">选择练习题库</option>
           {banks.map(item => <option key={item.id} value={item.id}>{item.name} · {item.questionCount} 题</option>)}
         </select>
+        <div className="mt-5">
+          <p className="text-sm font-semibold">AI 面试官风格</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {interviewerStyles.map(item => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setStyle(item.key)}
+                className={`rounded-2xl border p-3 text-left transition ${style === item.key ? 'border-[var(--accent)] bg-[var(--accent-soft)] shadow-sm' : 'border-border bg-surface hover:bg-muted'}`}
+              >
+                <span className="text-sm font-semibold">{item.label}</span>
+                <span className="mt-1 block text-xs leading-5 text-muted-foreground">{item.description}</span>
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="mt-6 flex justify-end gap-2">
           <Button variant="secondary" onClick={() => setOpen(false)}>取消</Button>
           <Button disabled={busy} onClick={practice}>{busy ? '创建中…' : '立即开始'}</Button>

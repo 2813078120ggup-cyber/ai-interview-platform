@@ -80,6 +80,7 @@ export function CandidateReport() {
       exportTitle={`InterviewOS-${id}-候选人评测报告`}
       backLabel="返回面试大厅"
       onBack={() => navigate('/candidate/interviews')}
+      trainingPlanEndpoint={`/v1/interviews/${id}/report/training-plan`}
       extraActions={<Button variant="secondary" onClick={() => navigate('/candidate/reports')}>能力趋势</Button>}
     />
   )

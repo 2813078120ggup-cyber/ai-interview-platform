@@ -30,4 +30,13 @@ public final class ReportDtos {
     public record CandidateAbilitySummary(long reportCount, TrendPoint latest, TrendPoint previous,
                                           ScoreChange changeFromPrevious, List<TrendPoint> trends) {
     }
+
+    public record TrainingDay(Integer day, String title, List<String> tasks) {
+    }
+
+    public record TrainingPlan(String priority, Integer durationDays, List<String> focusAreas,
+                               List<TrainingDay> dailyPlan, List<String> recommendedBanks,
+                               List<String> interviewDrills, List<String> successCriteria,
+                               String generationMethod) {
+    }
 }

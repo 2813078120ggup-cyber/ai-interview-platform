@@ -74,7 +74,7 @@ public class AiTaskService {
         if (isChoiceQuestion(interviewQuestion)) {
             throw BusinessException.badRequest("选择题提交后将直接进入下一题，不生成 AI 追问");
         }
-        return enqueue(interviewId, null, FOLLOW_UP, null, json("answer", answer, "question", question));
+        return enqueue(interviewId, null, FOLLOW_UP, null, json("answer", answer, "question", question, "interviewerStyle", interviewerStyle(interview)));
     }
 
     @Transactional
@@ -87,7 +87,7 @@ public class AiTaskService {
         if (first == null) throw BusinessException.badRequest("本场面试尚未配置题目");
         String question = questionContent(first);
         if (question.isBlank()) throw new IllegalStateException("面试首题快照缺少内容");
-        return enqueue(interviewId, null, OPENING, "opening:" + interviewId, json("question", question));
+        return enqueue(interviewId, null, OPENING, "opening:" + interviewId, json("question", question, "interviewerStyle", interviewerStyle(interview)));
     }
 
     /** Called only after the interview status has been atomically changed to report-generating. */
@@ -165,12 +165,13 @@ public class AiTaskService {
 
     private String followUp(AiTask task) {
         JsonNode input = tree(task.getInputPayload());
-        String question = deepSeekGateway.followUp(input.path("question").asText(), input.path("answer").asText());
+        String question = deepSeekGateway.followUp(input.path("question").asText(), input.path("answer").asText(), input.path("interviewerStyle").asText("big-tech"));
         return json("followUp", question);
     }
 
     private String opening(AiTask task) {
-        String question = deepSeekGateway.openingQuestion(tree(task.getInputPayload()).path("question").asText());
+        JsonNode input = tree(task.getInputPayload());
+        String question = deepSeekGateway.openingQuestion(input.path("question").asText(), input.path("interviewerStyle").asText("big-tech"));
         return json("question", question);
     }
 
@@ -458,6 +459,15 @@ public class AiTaskService {
     }
 
     private String nullToEmpty(String value) { return value == null ? "" : value; }
+
+    private String interviewerStyle(Interview interview) {
+        String remark = interview.getRemark();
+        if (remark == null) return "big-tech";
+        int index = remark.indexOf("interviewerStyle=");
+        if (index < 0) return "big-tech";
+        String value = remark.substring(index + "interviewerStyle=".length()).split("[;\\s,|]", 2)[0].trim();
+        return value.isBlank() ? "big-tech" : value;
+    }
     private boolean retryable(RuntimeException exception) {
         String message = exception.getMessage() == null ? "" : exception.getMessage();
         return !(message.contains("未配置 DEEPSEEK_API_KEY") || message.contains("HTTP 401") || message.contains("HTTP 403"));

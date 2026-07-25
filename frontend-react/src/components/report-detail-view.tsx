@@ -1,9 +1,10 @@
-import { ArrowLeft, BarChart3, CheckCircle2, Download, TrendingUp, X } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { ArrowLeft, BarChart3, CalendarDays, CheckCircle2, Download, Sparkles, Target, TrendingUp, X } from 'lucide-react'
+import { useState, type ReactNode } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { request, type TrainingPlan } from '@/lib/api'
 import { exportReportPdf } from '@/lib/report-export'
 
 export type ReportDetailData = {
@@ -46,6 +47,7 @@ type ReportDetailViewProps = {
   onClose?: () => void
   onExport?: () => void
   extraActions?: ReactNode
+  trainingPlanEndpoint?: string
 }
 
 export function ReportDetailView({
@@ -60,9 +62,29 @@ export function ReportDetailView({
   onClose,
   onExport,
   extraActions,
+  trainingPlanEndpoint,
 }: ReportDetailViewProps) {
   const scores = dimensions.map(([key]) => Number(report[key]))
   const average = Math.round(scores.reduce((sum, value) => sum + value, 0) / scores.length)
+  const [plan, setPlan] = useState<TrainingPlan>()
+  const [planOpen, setPlanOpen] = useState(false)
+  const [planLoading, setPlanLoading] = useState(false)
+  const [planError, setPlanError] = useState('')
+
+  async function generateTrainingPlan() {
+    if (!trainingPlanEndpoint) return
+    setPlanOpen(true)
+    if (plan) return
+    setPlanLoading(true)
+    setPlanError('')
+    try {
+      setPlan(await request<TrainingPlan>(trainingPlanEndpoint, { method: 'POST' }))
+    } catch (reason) {
+      setPlanError(reason instanceof Error ? reason.message : '训练计划生成失败')
+    } finally {
+      setPlanLoading(false)
+    }
+  }
 
   return (
     <div data-print-root className="report-print-root mx-auto max-w-6xl space-y-6">
@@ -168,6 +190,12 @@ export function ReportDetailView({
         </div>
         <div className="flex flex-wrap gap-2">
           {extraActions}
+          {trainingPlanEndpoint && (
+            <Button variant="secondary" onClick={() => void generateTrainingPlan()} disabled={planLoading}>
+              <Sparkles className="h-4 w-4" />
+              {planLoading ? '生成中…' : plan ? '查看提升计划' : '生成我的提升计划'}
+            </Button>
+          )}
           <Button variant="secondary" onClick={() => onExport ? onExport() : exportReportPdf(exportTitle)}>
             <Download className="h-4 w-4" />
             导出 PDF
@@ -264,6 +292,79 @@ export function ReportDetailView({
           </div>
         </Card>
       </div>
+
+      {planOpen && trainingPlanEndpoint && (
+        <Card className="no-print overflow-hidden">
+          <div className="flex flex-col gap-3 border-b border-border pb-5 md:flex-row md:items-start md:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-[var(--accent)]">PERSONAL TRAINING PLAN</p>
+              <h2 className="mt-1 text-2xl font-bold">我的 7 天提升计划</h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">根据四维能力短板自动生成专项训练路径，适合直接照着练。</p>
+            </div>
+            <Button variant="secondary" onClick={() => setPlanOpen(false)}>收起计划</Button>
+          </div>
+          {planLoading && <p className="py-8 text-sm text-muted-foreground">AI 教练正在阅读报告并生成训练计划…</p>}
+          {planError && <p className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{planError}</p>}
+          {plan && (
+            <div className="mt-6 space-y-6">
+              <div className="rounded-[24px] border border-[var(--border)] bg-[linear-gradient(135deg,var(--accent-soft),var(--surface))] p-5">
+                <div className="flex items-start gap-3">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[var(--surface)] text-[var(--accent)] shadow-sm">
+                    <Target className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[.22em] text-[var(--accent)]">{plan.generationMethod === 'ai' ? 'AI Generated' : 'Rule Based'}</p>
+                    <h3 className="mt-2 text-lg font-bold">{plan.priority}</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">训练周期：{plan.durationDays || 7} 天</p>
+                  </div>
+                </div>
+              </div>
+              <div className="grid gap-4 lg:grid-cols-[1fr_1.25fr]">
+                <div className="space-y-4">
+                  <article className="rounded-[22px] border border-border p-4">
+                    <h3 className="font-bold">训练重点</h3>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {plan.focusAreas.map(item => <Badge key={item} tone="info">{item}</Badge>)}
+                    </div>
+                  </article>
+                  <article className="rounded-[22px] border border-border p-4">
+                    <h3 className="font-bold">推荐题库 / 方向</h3>
+                    <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                      {plan.recommendedBanks.map(item => <li key={item}>• {item}</li>)}
+                    </ul>
+                  </article>
+                  <article className="rounded-[22px] border border-border p-4">
+                    <h3 className="font-bold">达成标准</h3>
+                    <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                      {plan.successCriteria.map(item => <li key={item}>• {item}</li>)}
+                    </ul>
+                  </article>
+                </div>
+                <div className="rounded-[24px] border border-border p-4">
+                  <h3 className="flex items-center gap-2 font-bold"><CalendarDays className="h-4 w-4" />每日训练安排</h3>
+                  <div className="mt-4 space-y-3">
+                    {plan.dailyPlan.map(day => (
+                      <article key={`${day.day}-${day.title}`} className="rounded-2xl bg-muted/50 p-4">
+                        <p className="text-xs font-semibold text-[var(--accent)]">DAY {day.day}</p>
+                        <h4 className="mt-1 font-bold">{day.title}</h4>
+                        <ul className="mt-2 space-y-1 text-sm leading-6 text-muted-foreground">
+                          {day.tasks.map(task => <li key={task}>• {task}</li>)}
+                        </ul>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <article className="rounded-[22px] border border-border p-4">
+                <h3 className="font-bold">推荐模拟方式</h3>
+                <div className="mt-3 grid gap-2 md:grid-cols-3">
+                  {plan.interviewDrills.map(item => <div key={item} className="rounded-2xl bg-muted px-4 py-3 text-sm">{item}</div>)}
+                </div>
+              </article>
+            </div>
+          )}
+        </Card>
+      )}
       </div>
     </div>
   )

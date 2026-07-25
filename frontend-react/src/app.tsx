@@ -11,6 +11,7 @@ import { CandidatePageShell } from '@/components/candidate-page-shell'
 import { GlobalMouseFollower } from '@/components/global-mouse-follower'
 import { PageTransition } from '@/components/page-transition'
 import { type Interview, type PracticeBank, request } from '@/lib/api'
+import { isPracticeInterview } from '@/lib/interviewer-styles'
 import { profile } from '@/lib/session'
 import { AdminAuditLog } from '@/pages/admin-audit-log'
 import { AdminCandidateDetail } from '@/pages/admin-candidate-detail'
@@ -125,11 +126,11 @@ function Overview() {
   }, [])
 
   const pendingCount = interviews.filter(item => item.status === 0).length
-  const practiceCount = interviews.filter(item => item.remark === 'candidate-practice').length
+  const practiceCount = interviews.filter(item => isPracticeInterview(item.remark)).length
   const averageScore = summary?.latest?.totalScore ?? 0
   const feedbackCount = summary?.reportCount ?? 0
-  const activePractice = interviews.find(item => item.remark === 'candidate-practice' && item.status === 1)
-  const pendingPractice = interviews.find(item => item.remark === 'candidate-practice' && item.status === 0)
+  const activePractice = interviews.find(item => isPracticeInterview(item.remark) && item.status === 1)
+  const pendingPractice = interviews.find(item => isPracticeInterview(item.remark) && item.status === 0)
   const resumablePractice = activePractice ?? pendingPractice
   const nextPracticeBank = banks[0]
   const stats = [
@@ -157,7 +158,7 @@ function Overview() {
     try {
       const result = await request<Interview>('/v1/interviews/practice', {
         method: 'POST',
-        body: JSON.stringify({ questionBankId: nextPracticeBank.id, questionCount: 5, duration: 30 }),
+        body: JSON.stringify({ questionBankId: nextPracticeBank.id, questionCount: 5, duration: 30, interviewerStyle: 'big-tech' }),
       })
       nav(`/candidate/interviews/${result.id}/room`)
     } catch (reason) {

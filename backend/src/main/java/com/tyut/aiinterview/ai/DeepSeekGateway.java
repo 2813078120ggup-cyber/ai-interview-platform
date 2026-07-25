@@ -26,9 +26,14 @@ public class DeepSeekGateway {
     }
 
     public String followUp(String originalQuestion, String answer) {
+        return followUp(originalQuestion, answer, "big-tech");
+    }
+
+    public String followUp(String originalQuestion, String answer, String interviewerStyle) {
         String prompt = """
                 你是一名有 8 年以上招聘经验的中国互联网公司资深技术面试官，正在进行正式模拟面试。
                 你必须像真实面试官一样推进面试，而不是像老师、助手或聊天机器人。
+                当前面试官风格：%s
                 当前主问题：%s
                 候选人刚刚的回答：%s
 
@@ -39,12 +44,39 @@ public class DeepSeekGateway {
                 3. 若候选人回答“不知道”“不清楚”或内容极少，降低一层难度，改问一个可回答的基础子问题或实际使用经验；绝不能要求候选人分析“我不知道”。
                 4. 不要重复主问题、复述候选人原话，不要使用助手口吻。
                 5. 不要评分、总结、鼓励、寒暄，也不要一次给出多个问题。
-                """.formatted(originalQuestion, answer);
+                6. 必须严格遵循当前面试官风格，但不能刻意表演或冒犯候选人。
+                """.formatted(stylePrompt(interviewerStyle), originalQuestion, answer);
         return askText("你是专业面试官，严格执行用户给出的面试流程与输出规则。", prompt);
     }
 
     public String openingQuestion(String question) {
-        return askText("你是一名专业的中文 AI 面试官。围绕给定题目开始正式面试。只输出一句自然、具体的首个面试问题，不要解释题目、评分、寒暄或自我介绍。", question);
+        return openingQuestion(question, "big-tech");
+    }
+
+    public String openingQuestion(String question, String interviewerStyle) {
+        String instruction = "你是一名专业的中文 AI 面试官。围绕给定题目开始正式面试。只输出一句自然、具体的首个面试问题，不要解释题目、评分、寒暄或自我介绍。面试官风格：" + stylePrompt(interviewerStyle);
+        return askText(instruction, question);
+    }
+
+    public JsonNode generateTrainingPlan(String reportContext) {
+        String prompt = """
+                请基于候选人的面试报告生成一份个性化训练计划。
+                要求具体、可执行，重点补齐最低分能力项，不要空泛鼓励。
+
+                报告数据：%s
+
+                仅返回 JSON，不要使用 Markdown 或代码块：
+                {
+                  "priority":"当前最优先提升的一句话结论",
+                  "durationDays":7,
+                  "focusAreas":["最多4个训练重点"],
+                  "dailyPlan":[{"day":1,"title":"训练主题","tasks":["2到3个具体任务"]}],
+                  "recommendedBanks":["推荐题库或训练方向"],
+                  "interviewDrills":["推荐模拟面试练习方式"],
+                  "successCriteria":["完成训练后的可衡量标准"]
+                }
+                """.formatted(reportContext);
+        return askJson("你是资深面试训练教练，擅长把评测报告转化为 7 天训练计划，输出必须是合法 JSON。", prompt);
     }
 
     public String interviewCoach(String conversation) {
@@ -153,6 +185,17 @@ public class DeepSeekGateway {
 
     private String blankToDefault(String value, String defaultValue) {
         return value == null || value.isBlank() ? defaultValue : value;
+    }
+
+    private String stylePrompt(String style) {
+        return switch (style == null ? "" : style.trim()) {
+            case "gentle" -> "温和型：语气友好、降低压迫感，用引导式问题帮助候选人展开，但仍保持专业标准。";
+            case "pressure" -> "压迫型：节奏更快、追问更尖锐，重点检验边界、漏洞和抗压表达，但不能羞辱候选人。";
+            case "hr" -> "HR 综合面：关注动机、沟通、稳定性、团队协作、职业规划和行为事件。";
+            case "project-deep" -> "项目深挖型：围绕项目背景、个人贡献、难点、取舍、数据结果和复盘持续追问。";
+            case "campus-basic" -> "校招基础型：从基础概念和常见场景切入，适合应届生，问题清晰、难度逐步上升。";
+            default -> "大厂技术面：标准正式、技术深挖，关注原理、复杂度、工程实践、异常场景和系统性思考。";
+        };
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
