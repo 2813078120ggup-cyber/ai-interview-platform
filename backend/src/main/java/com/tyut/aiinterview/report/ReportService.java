@@ -47,7 +47,7 @@ public class ReportService {
         if (report == null) { report = new Report(); report.setInterviewId(interviewId); }
         report.setProfessionalScore(average(evaluations, Evaluation::getProfessionalScore)); report.setExpressionScore(average(evaluations, Evaluation::getExpressionScore));
         report.setLogicScore(average(evaluations, Evaluation::getLogicScore)); report.setAdaptabilityScore(average(evaluations, Evaluation::getAdaptabilityScore));
-        report.setTotalScore(average(evaluations, Evaluation::getOverallScore)); report.setSummary("根据本次面试作答与评测数据生成的综合评估。");
+        report.setTotalScore(reportTotalScore(evaluations)); report.setSummary("根据本次面试作答与评测数据生成的综合评估。");
         report.setStrengths("请结合各维度得分与评语进一步确认候选人优势。"); report.setWeaknesses("请结合各维度得分与评语进一步确认待提升项。");
         report.setImprovementSuggestions("建议围绕得分较低的能力维度进行针对性训练。"); report.setGenerationMethod("manual"); report.setGeneratedBy(currentUser.id());
         report.setStatus(0); report.setPublishedAt(null);
@@ -122,5 +122,19 @@ public class ReportService {
     private BigDecimal diff(BigDecimal left, BigDecimal right) { return left.subtract(right).setScale(2, RoundingMode.HALF_UP); }
     private boolean contains(String value, String keyword) { return value != null && value.toLowerCase().contains(keyword); }
     private BigDecimal average(List<Evaluation> records, Function<Evaluation, BigDecimal> getter) { return records.stream().map(getter).reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(records.size()), 2, RoundingMode.HALF_UP); }
+    private BigDecimal reportTotalScore(List<Evaluation> evaluations) {
+        BigDecimal professional = average(evaluations, Evaluation::getProfessionalScore);
+        BigDecimal expression = average(evaluations, Evaluation::getExpressionScore);
+        BigDecimal logic = average(evaluations, Evaluation::getLogicScore);
+        BigDecimal adaptability = average(evaluations, Evaluation::getAdaptabilityScore);
+        BigDecimal overall = average(evaluations, Evaluation::getOverallScore);
+        BigDecimal weightedDimensions = professional.multiply(BigDecimal.valueOf(0.45))
+                .add(logic.multiply(BigDecimal.valueOf(0.25)))
+                .add(expression.multiply(BigDecimal.valueOf(0.20)))
+                .add(adaptability.multiply(BigDecimal.valueOf(0.10)));
+        return overall.multiply(BigDecimal.valueOf(0.65))
+                .add(weightedDimensions.multiply(BigDecimal.valueOf(0.35)))
+                .setScale(2, RoundingMode.HALF_UP);
+    }
     private void requireHr() { if (!currentUser.hasRole("ADMIN")) throw BusinessException.forbidden("仅管理员可生成报告"); }
 }

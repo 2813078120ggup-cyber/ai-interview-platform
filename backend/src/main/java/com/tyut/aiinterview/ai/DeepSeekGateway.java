@@ -62,24 +62,39 @@ public class DeepSeekGateway {
 
     public JsonNode evaluateAnswer(String question, String referenceAnswer, String candidateAnswer) {
         String prompt = """
-                请对一名候选人的单题面试回答进行严格、可解释的评分。
+                请对一名候选人的单题面试回答进行严格、可解释、证据优先的评分。
 
                 面试题：%s
                 参考信息（可能为空，仅用于校准，不应直接泄露给候选人）：%s
                 候选人回答：%s
+
+                评分必须遵循以下分布，不要给“礼貌分”：
+                - 0-20：未回答、答非所问、只说不知道/不会，或几乎没有有效信息。
+                - 21-40：只给出零散关键词，明显缺少核心概念或结论大多错误。
+                - 41-60：知道部分概念，但表达浅、缺少关键机制/边界/实践细节。
+                - 61-75：回答基本正确，有结构，但深度、案例、边界意识或追问应对一般。
+                - 76-85：回答较完整，能覆盖核心机制、适用场景、风险和实践经验。
+                - 86-92：优秀回答，需要体现深度理解、准确术语、清晰推理和工程经验。
+                - 93-100：专家级表现，只有在答案非常完整、深入且几乎无明显缺陷时才可使用。
+
+                严格要求：
+                - 普通正确回答通常不应超过 75 分。
+                - 没有展开原因、边界、例子或实践经验的回答，即使方向正确也不应超过 70 分。
+                - 空答、很短回答、套话、重复题目、只说“不知道/不会/不清楚”，必须低分。
+                - 不要因为候选人语气礼貌、表达自信或文字较长而虚高。
+                - 分数必须与回答内容证据对应，宁可偏严，不要偏松。
 
                 评分标准：
                 - professionalScore：专业知识的正确性、深度和边界意识。
                 - expressionScore：表达是否清晰、结构化、准确。
                 - logicScore：分析过程、论据与结论的逻辑性。
                 - adaptabilityScore：场景应对、实践意识和问题拆解能力。
-                - overallScore：本题综合表现，不能机械地等于四项平均值。
-                未作答、答非所问或“不会”应得到与实际表现相符的低分；不得因为礼貌而虚高。
+                - overallScore：本题综合表现，必须低于或接近四项能力的证据水平，不能机械地等于四项平均值。
 
                 仅返回一个 JSON 对象，不要使用 Markdown 或代码块：
-                {"professionalScore":0-100,"expressionScore":0-100,"logicScore":0-100,"adaptabilityScore":0-100,"overallScore":0-100,"comment":"不超过120字的具体中文评语"}
+                {"professionalScore":0-100,"expressionScore":0-100,"logicScore":0-100,"adaptabilityScore":0-100,"overallScore":0-100,"comment":"不超过120字的具体中文评语，指出主要扣分原因"}
                 """.formatted(question, blankToDefault(referenceAnswer, "无"), blankToDefault(candidateAnswer, "未提交任何回答"));
-        return askJson("你是企业技术面试评测专家。依据证据审慎评分，输出必须是合法 JSON。", prompt);
+        return askJson("你是以严格著称的企业技术面试评测专家。评分必须保守、证据优先，输出必须是合法 JSON。", prompt);
     }
 
     public JsonNode generateReport(String evaluationContext) {

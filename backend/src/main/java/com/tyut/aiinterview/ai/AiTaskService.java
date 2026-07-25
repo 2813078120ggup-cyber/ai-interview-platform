@@ -184,7 +184,7 @@ public class AiTaskService {
             String candidateAnswer = answer == null ? "" : firstNonBlank(answer.getAnswerContent(), answer.getTranscript(), answer.getAnswerData());
             JsonNode result = deepSeekGateway.evaluateAnswer(question, reference, candidateAnswer);
 
-            Evaluation evaluation = upsertAiEvaluation(interviewQuestion.getId(), result);
+            Evaluation evaluation = upsertAiEvaluation(interviewQuestion.getId(), result, candidateAnswer, isChoiceQuestion(interviewQuestion));
             evaluations.add(evaluation);
             contexts.add(new EvaluationContext(interviewQuestion.getSequenceNo(), question, candidateAnswer,
                     evaluation.getProfessionalScore(), evaluation.getExpressionScore(), evaluation.getLogicScore(),
@@ -196,7 +196,7 @@ public class AiTaskService {
         return json("reportId", report.getId(), "evaluationCount", evaluations.size());
     }
 
-    private Evaluation upsertAiEvaluation(Long interviewQuestionId, JsonNode result) {
+    private Evaluation upsertAiEvaluation(Long interviewQuestionId, JsonNode result, String candidateAnswer, boolean choiceQuestion) {
         Evaluation evaluation = evaluationMapper.selectOne(new LambdaQueryWrapper<Evaluation>()
                 .eq(Evaluation::getInterviewQuestionId, interviewQuestionId).eq(Evaluation::getSource, "ai").last("LIMIT 1"));
         if (evaluation == null) {
@@ -205,11 +205,16 @@ public class AiTaskService {
             evaluation.setSource("ai");
             evaluation.setEvaluatorId(null);
         }
-        evaluation.setProfessionalScore(score(result, "professionalScore"));
-        evaluation.setExpressionScore(score(result, "expressionScore"));
-        evaluation.setLogicScore(score(result, "logicScore"));
-        evaluation.setAdaptabilityScore(score(result, "adaptabilityScore"));
-        evaluation.setOverallScore(score(result, "overallScore"));
+        BigDecimal professional = calibratedScore(score(result, "professionalScore"), candidateAnswer, choiceQuestion);
+        BigDecimal expression = calibratedScore(score(result, "expressionScore"), candidateAnswer, choiceQuestion);
+        BigDecimal logic = calibratedScore(score(result, "logicScore"), candidateAnswer, choiceQuestion);
+        BigDecimal adaptability = calibratedScore(score(result, "adaptabilityScore"), candidateAnswer, choiceQuestion);
+        evaluation.setProfessionalScore(professional);
+        evaluation.setExpressionScore(expression);
+        evaluation.setLogicScore(logic);
+        evaluation.setAdaptabilityScore(adaptability);
+        evaluation.setOverallScore(calibratedOverall(score(result, "overallScore"), candidateAnswer, choiceQuestion,
+                professional, expression, logic, adaptability));
         evaluation.setComment(requiredText(result, "comment", 2000));
         evaluation.setStatus(1);
         evaluation.setConfirmedBy(null);
@@ -227,7 +232,7 @@ public class AiTaskService {
         report.setExpressionScore(average(evaluations, Evaluation::getExpressionScore));
         report.setLogicScore(average(evaluations, Evaluation::getLogicScore));
         report.setAdaptabilityScore(average(evaluations, Evaluation::getAdaptabilityScore));
-        report.setTotalScore(average(evaluations, Evaluation::getOverallScore));
+        report.setTotalScore(reportTotalScore(evaluations));
         report.setSummary(requiredText(narrative, "summary", 3000));
         report.setStrengths(requiredText(narrative, "strengths", 3000));
         report.setWeaknesses(requiredText(narrative, "weaknesses", 3000));
@@ -287,6 +292,86 @@ public class AiTaskService {
             throw new IllegalStateException("DeepSeek 评分超出 0-100 范围：" + field);
         }
         return score;
+    }
+
+    private BigDecimal calibratedScore(BigDecimal rawScore, String answer, boolean choiceQuestion) {
+        BigDecimal calibrated;
+        if (rawScore.compareTo(BigDecimal.valueOf(40)) <= 0) {
+            calibrated = rawScore.multiply(BigDecimal.valueOf(0.95));
+        } else if (rawScore.compareTo(BigDecimal.valueOf(70)) <= 0) {
+            calibrated = rawScore.multiply(BigDecimal.valueOf(0.90)).add(BigDecimal.valueOf(2));
+        } else if (rawScore.compareTo(BigDecimal.valueOf(85)) <= 0) {
+            calibrated = rawScore.multiply(BigDecimal.valueOf(0.84)).add(BigDecimal.valueOf(5));
+        } else {
+            calibrated = BigDecimal.valueOf(76).add(rawScore.subtract(BigDecimal.valueOf(85)).multiply(BigDecimal.valueOf(0.45)));
+        }
+        return applyAnswerEvidenceCap(calibrated, answer, choiceQuestion);
+    }
+
+    private BigDecimal calibratedOverall(BigDecimal rawOverall, String answer, boolean choiceQuestion, BigDecimal professional,
+                                         BigDecimal expression, BigDecimal logic, BigDecimal adaptability) {
+        BigDecimal calibrated = calibratedScore(rawOverall, answer, choiceQuestion);
+        BigDecimal weightedByDimensions = weightedScore(professional, expression, logic, adaptability);
+        BigDecimal evidenceCeiling = weightedByDimensions.add(BigDecimal.valueOf(3));
+        if (calibrated.compareTo(evidenceCeiling) > 0) {
+            calibrated = evidenceCeiling;
+        }
+        return applyAnswerEvidenceCap(calibrated, answer, choiceQuestion);
+    }
+
+    private BigDecimal reportTotalScore(List<Evaluation> evaluations) {
+        BigDecimal professional = average(evaluations, Evaluation::getProfessionalScore);
+        BigDecimal expression = average(evaluations, Evaluation::getExpressionScore);
+        BigDecimal logic = average(evaluations, Evaluation::getLogicScore);
+        BigDecimal adaptability = average(evaluations, Evaluation::getAdaptabilityScore);
+        BigDecimal overall = average(evaluations, Evaluation::getOverallScore);
+        return overall.multiply(BigDecimal.valueOf(0.65))
+                .add(weightedScore(professional, expression, logic, adaptability).multiply(BigDecimal.valueOf(0.35)))
+                .setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal weightedScore(BigDecimal professional, BigDecimal expression, BigDecimal logic, BigDecimal adaptability) {
+        return professional.multiply(BigDecimal.valueOf(0.45))
+                .add(logic.multiply(BigDecimal.valueOf(0.25)))
+                .add(expression.multiply(BigDecimal.valueOf(0.20)))
+                .add(adaptability.multiply(BigDecimal.valueOf(0.10)))
+                .setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal applyAnswerEvidenceCap(BigDecimal score, String answer, boolean choiceQuestion) {
+        int length = normalizedLength(answer);
+        BigDecimal capped = score;
+        if (length == 0) {
+            capped = min(capped, BigDecimal.valueOf(10));
+        } else if (isNoKnowledgeAnswer(answer)) {
+            capped = min(capped, BigDecimal.valueOf(30));
+        } else if (!choiceQuestion) {
+            if (length < 10) {
+                capped = min(capped, BigDecimal.valueOf(35));
+            } else if (length < 30) {
+                capped = min(capped, BigDecimal.valueOf(50));
+            } else if (length < 80) {
+                capped = min(capped, BigDecimal.valueOf(65));
+            }
+        }
+        return capped.max(BigDecimal.ZERO).min(BigDecimal.valueOf(100)).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal min(BigDecimal left, BigDecimal right) {
+        return left.compareTo(right) <= 0 ? left : right;
+    }
+
+    private int normalizedLength(String answer) {
+        if (answer == null) return 0;
+        return answer.replaceAll("\\s+", "").length();
+    }
+
+    private boolean isNoKnowledgeAnswer(String answer) {
+        if (answer == null) return false;
+        String normalized = answer.replaceAll("\\s+", "").toLowerCase();
+        return normalized.contains("不知道") || normalized.contains("不会") || normalized.contains("不清楚")
+                || normalized.contains("不懂") || normalized.contains("没思路") || normalized.equals("no")
+                || normalized.equals("none");
     }
 
     private String requiredText(JsonNode result, String field, int maxLength) {
