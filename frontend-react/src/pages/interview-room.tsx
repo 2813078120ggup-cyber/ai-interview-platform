@@ -194,7 +194,11 @@ export function InterviewRoom() {
       // measure and render its first frame instead of attaching off-screen.
       avatarRoot.current.style.display = 'block'
       avatarRoot.current.style.opacity = '0'
-      const sdk = await import(/* @vite-ignore */ sdkEntry) as any
+      // The SDK lives in public/ so its dynamic player chunks remain adjacent
+      // to index.js after deployment. Construct an absolute runtime URL so
+      // Vite does not attempt to transform a public ESM import in dev mode.
+      const sdkUrl = new URL(sdkEntry, window.location.origin).href
+      const sdk = await import(/* @vite-ignore */ sdkUrl) as any
       const AvatarPlatform = sdk.default
       if (!AvatarPlatform) throw new Error('讯飞 Web SDK 未加载成功，请检查 SDK 静态资源。')
       const avatar = new AvatarPlatform({ useInlinePlayer: true })

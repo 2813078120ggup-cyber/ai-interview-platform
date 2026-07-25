@@ -35,3 +35,9 @@
 
 - 前端：`npm run build` 通过。
 - 后端：`mvn -q -DskipTests package` 通过。
+
+## 2026-07-26 补丁：Vite 公共 ESM SDK 加载
+
+- SDK 目录保持在 `frontend-react/public/sdk/`，保证 `index.js` 与 XRTC/WebRTC 动态播放器分包同目录部署。
+- 不再让 Vite 在源码转换期解析 `/public` 中的 SDK；前端使用浏览器绝对 URL 与 `@vite-ignore` 在运行时导入入口文件。
+- 这样开发服务器和生产 Nginx 都以静态资源方式提供 SDK，同时 SDK 的内部相对动态导入路径保持正确。
