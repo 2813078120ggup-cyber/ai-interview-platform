@@ -45,14 +45,33 @@ public class AiProviderService {
     }
 
     public Optional<RuntimeProvider> defaultVirtualHumanProvider() {
+        // The interview room must always use the dedicated iFlytek provider.
+        // Selecting by voiceDefault previously allowed an unrelated/stale
+        // virtual-human row to win, which made the runtime avatarId differ
+        // from the one displayed in System Settings and resulted in an
+        // immediate iFlytek authentication failure.
+        AiProviderConfig xunfeiConfig = mapper.selectOne(new LambdaQueryWrapper<AiProviderConfig>()
+                .eq(AiProviderConfig::getCode, "xunfei-virtual-human")
+                .eq(AiProviderConfig::getKind, "virtual-human")
+                .last("LIMIT 1"));
+        if (xunfeiConfig != null) {
+            if (!truthy(xunfeiConfig.getEnabled())) {
+                return Optional.empty();
+            }
+            return Optional.of(toRuntimeProvider(xunfeiConfig));
+        }
+
         AiProviderConfig config = mapper.selectOne(new LambdaQueryWrapper<AiProviderConfig>()
                 .eq(AiProviderConfig::getKind, "virtual-human")
                 .eq(AiProviderConfig::getEnabled, 1)
-                .orderByDesc(AiProviderConfig::getVoiceDefault)
                 .orderByAsc(AiProviderConfig::getId)
                 .last("LIMIT 1"));
         if (config == null) return Optional.empty();
-        return Optional.of(new RuntimeProvider(
+        return Optional.of(toRuntimeProvider(config));
+    }
+
+    private RuntimeProvider toRuntimeProvider(AiProviderConfig config) {
+        return new RuntimeProvider(
                 config.getId(),
                 config.getName(),
                 config.getCode(),
@@ -64,7 +83,7 @@ public class AiProviderService {
                 secretCodec.decrypt(config.getApiSecretCipher()),
                 secretCodec.decrypt(config.getAppIdCipher()),
                 trim(config.getRemark())
-        ));
+        );
     }
 
     @Transactional
@@ -189,7 +208,11 @@ public class AiProviderService {
     }
 
     private String nextSecret(String oldCipher, String incoming) {
-        if (incoming == null || incoming.isBlank()) return "";
+        // The settings UI explicitly states that an empty secret keeps the
+        // previous value. Clearing it here silently invalidated an otherwise
+        // valid iFlytek provider after an operator changed only its avatar or
+        // voice setting.
+        if (incoming == null || incoming.isBlank()) return oldCipher == null ? "" : oldCipher;
         if (secretCodec.isMasked(incoming)) return oldCipher == null ? "" : oldCipher;
         return secretCodec.encrypt(incoming.trim());
     }

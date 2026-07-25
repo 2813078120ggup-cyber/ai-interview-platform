@@ -27,7 +27,9 @@ public class XunfeiVirtualHumanClient {
     private static final String DEFAULT_VOICE_NAME = "x4_lingxiaoxuan_oral";
 
     public WebSdkConfig webSdkConfig(AiProviderService.RuntimeProvider provider) throws Exception {
-        URI signedUri = authorizedUri(endpoint(provider.baseUrl()), provider.apiKey(), provider.apiSecret());
+        String apiKey = requiredCredential(provider.apiKey(), "API Key");
+        String apiSecret = requiredCredential(provider.apiSecret(), "API Secret");
+        URI signedUri = authorizedUri(endpoint(provider.baseUrl()), apiKey, apiSecret);
         return new WebSdkConfig(
                 signedUri.toString(),
                 provider.appId(),
@@ -73,6 +75,14 @@ public class XunfeiVirtualHumanClient {
         String authorization = Base64.getEncoder().encodeToString(authorizationOrigin.getBytes(StandardCharsets.UTF_8));
         String query = "authorization=" + encode(authorization) + "&date=" + encode(date) + "&host=" + encode(host);
         return URI.create(uri + "?" + query);
+    }
+
+    private String requiredCredential(String value, String field) {
+        String normalized = value == null ? "" : value.trim();
+        if (normalized.isBlank()) {
+            throw new IllegalStateException("讯飞虚拟人缺少 " + field + "，请在系统设置中重新保存该 Provider。");
+        }
+        return normalized;
     }
 
     private String encode(String value) {

@@ -46,6 +46,17 @@ function eventText(value: unknown): string {
   return ''
 }
 
+function avatarErrorText(value: unknown): string {
+  if (!value || typeof value !== 'object') return eventText(value)
+  const source = value as Record<string, unknown>
+  const code = String(source.code ?? source.errorCode ?? (source.header as Record<string, unknown> | undefined)?.code ?? '').trim()
+  const message = eventText(value) || '请重新连接。'
+  if (code === '11203') return '11203：在线虚拟人并发会话不可用。请确认讯飞控制台没有“持续中”链路，并检查授权路数。'
+  if (code === '11200') return '11200：当前形象或发音人未获接口服务授权。请核对系统设置中的形象 ID、发音人和接口服务 ID 是否来自同一服务。'
+  if (code === '10104') return '10104：讯飞请求参数不完整或不匹配。请核对接口服务 ID、形象 ID 和发音人。'
+  return code ? `${code}：${message}` : message
+}
+
 export function InterviewRoom() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
@@ -192,6 +203,7 @@ export function InterviewRoom() {
         throw new Error(config.message || '讯飞虚拟人尚未完成配置。')
       }
       if (!avatarRoot.current) throw new Error('虚拟人画布尚未准备完成。')
+      setVirtualMessage(`正在连接讯飞虚拟人：形象 ${config.avatarId}，发音人 ${config.vcn}。`)
       await disposeAvatar(false)
       avatarRoot.current.replaceChildren()
       // The idle UI hides the mount point. Reveal it before start so XRTC can
@@ -220,7 +232,7 @@ export function InterviewRoom() {
         setVirtualActive(false)
         setListening(false)
         setThinking(false)
-        setVirtualMessage('讯飞虚拟人运行异常：' + (eventText(event) || '请重新连接。'))
+        setVirtualMessage('讯飞虚拟人运行异常：' + avatarErrorText(event))
       })
       avatar.on?.(sdk.SDKEvents.asr, (event: unknown) => {
         const text = eventText(event)
