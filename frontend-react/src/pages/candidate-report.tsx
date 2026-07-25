@@ -1,19 +1,22 @@
 import { RefreshCw, Sparkles } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { ReportDetailView, type ReportDetailData } from '@/components/report-detail-view'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { request } from '@/lib/api'
+import { exportReportPdf } from '@/lib/report-export'
 
 export function CandidateReport() {
   const { id = '' } = useParams()
+  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const [report, setReport] = useState<ReportDetailData>()
   const [loading, setLoading] = useState(true)
   const [retrying, setRetrying] = useState(false)
   const [error, setError] = useState('')
+  const autoPrint = searchParams.get('print') === '1'
 
   async function load(silent = false) {
     if (!silent) setLoading(true)
@@ -38,6 +41,14 @@ export function CandidateReport() {
     const timer = window.setTimeout(() => void load(true), 5000)
     return () => window.clearTimeout(timer)
   }, [retrying, report])
+
+  useEffect(() => {
+    if (!report || !autoPrint) return
+    const timer = window.setTimeout(() => {
+      exportReportPdf(`InterviewOS-${id}-候选人评测报告`)
+    }, 260)
+    return () => window.clearTimeout(timer)
+  }, [autoPrint, id, report])
 
   if (loading) return <Card>正在获取 AI 评测报告…</Card>
 

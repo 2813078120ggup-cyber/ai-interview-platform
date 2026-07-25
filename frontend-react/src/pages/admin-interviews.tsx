@@ -411,6 +411,7 @@ function ReportDialog({ report, detail, loading, onClose }: { report: ReportItem
           heading={report.interviewTitle}
           meta={`候选人：${report.candidateName} · 面试时间：${dateText(report.scheduledAt)}`}
           exportTitle={`InterviewOS-${report.candidateName}-${report.interviewTitle}-评测报告`}
+          onExport={() => window.open(`/candidate/interviews/${report.interviewId}/report?print=1`, '_blank', 'noopener,noreferrer')}
           onClose={onClose}
         />
       )}

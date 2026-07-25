@@ -36,6 +36,7 @@ type ReportDetailViewProps = {
   backLabel?: string
   onBack?: () => void
   onClose?: () => void
+  onExport?: () => void
   extraActions?: ReactNode
 }
 
@@ -49,13 +50,14 @@ export function ReportDetailView({
   backLabel,
   onBack,
   onClose,
+  onExport,
   extraActions,
 }: ReportDetailViewProps) {
   const scores = dimensions.map(([key]) => Number(report[key]))
   const average = Math.round(scores.reduce((sum, value) => sum + value, 0) / scores.length)
 
   return (
-    <div data-print-root className="mx-auto max-w-6xl space-y-6">
+    <div data-print-root className="report-print-root mx-auto max-w-6xl space-y-6">
       <div className="print-only mb-6 border-b border-[#ddd7cc] pb-4">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9b6847]">InterviewOS Assessment Report</p>
         <h1 className="mt-2 text-2xl font-bold">{title}</h1>
@@ -76,7 +78,7 @@ export function ReportDetailView({
         </div>
         <div className="flex flex-wrap gap-2">
           {extraActions}
-          <Button variant="secondary" onClick={() => exportReportPdf(exportTitle)}>
+          <Button variant="secondary" onClick={() => onExport ? onExport() : exportReportPdf(exportTitle)}>
             <Download className="h-4 w-4" />
             导出 PDF
           </Button>
@@ -88,7 +90,7 @@ export function ReportDetailView({
         </div>
       </header>
 
-      <section className="soft-emphasis-panel print-section overflow-hidden rounded-[28px] px-6 py-7 shadow-xl sm:px-9">
+      <section className="report-print-hero soft-emphasis-panel print-section overflow-hidden rounded-[28px] px-6 py-7 shadow-xl sm:px-9">
         <div className="grid gap-7 md:grid-cols-[1fr_auto] md:items-center">
           <div>
             <Badge tone={report.status === 1 ? 'success' : 'warning'}>{report.status === 1 ? '报告已生成' : '报告草稿'}</Badge>
@@ -104,7 +106,7 @@ export function ReportDetailView({
         </div>
       </section>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="report-print-score-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {dimensions.map(([key, label, note]) => (
           <Card key={key} className="print-card">
             <p className="text-sm text-muted-foreground">{label}</p>
@@ -120,8 +122,8 @@ export function ReportDetailView({
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[.9fr_1.1fr]">
-        <Card className="print-card">
+      <div className="report-print-detail-grid grid gap-6 lg:grid-cols-[.9fr_1.1fr]">
+        <Card className="report-print-profile print-card">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-[var(--accent)]">ABILITY PROFILE</p>
@@ -147,7 +149,7 @@ export function ReportDetailView({
           </div>
         </Card>
 
-        <Card className="print-card">
+        <Card className="report-print-takeaways print-card">
           <p className="text-sm font-semibold text-[var(--accent)]">AI TAKEAWAYS</p>
           <h2 className="mt-1 text-xl font-bold">下一次，做得更好</h2>
           <div className="mt-6 space-y-4">
