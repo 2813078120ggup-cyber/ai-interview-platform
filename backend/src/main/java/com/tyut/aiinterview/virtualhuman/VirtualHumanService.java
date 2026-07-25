@@ -23,6 +23,27 @@ public class VirtualHumanService {
         xunfeiClient.stop(request.sessionId());
     }
 
+    /**
+     * Supplies a signed URL to the official Web SDK. Starting, pinging and
+     * stopping the live session are then managed by that SDK in the browser.
+     */
+    public VirtualHumanDtos.SdkConfigResponse sdkConfig() {
+        return aiProviderService.defaultVirtualHumanProvider()
+                .filter(this::isConfigured)
+                .filter(provider -> provider.code().toLowerCase().contains("xunfei"))
+                .map(provider -> {
+                    try {
+                        XunfeiVirtualHumanClient.WebSdkConfig config = xunfeiClient.webSdkConfig(provider);
+                        return new VirtualHumanDtos.SdkConfigResponse(
+                                true, provider.name(), "READY", "讯飞 Web SDK 配置已就绪",
+                                config.signedUrl(), config.appId(), config.sceneId(), config.avatarId(), config.vcn(), config.protocol());
+                    } catch (Exception exception) {
+                        return unavailable("讯飞 SDK 签名生成失败：" + shortMessage(exception));
+                    }
+                })
+                .orElseGet(() -> unavailable("未找到可用的讯飞虚拟人配置，请在系统设置中完成配置并启用。"));
+    }
+
     private VirtualHumanDtos.SpeakResponse drive(AiProviderService.RuntimeProvider provider, VirtualHumanDtos.SpeakRequest request) {
         if (!isConfigured(provider)) {
             return fallback("虚拟人 Provider 配置不完整，请在系统设置中补齐 Base URL、AppID、API Key、API Secret 和 avatarId", request.text());
@@ -72,6 +93,11 @@ public class VirtualHumanService {
 
     private VirtualHumanDtos.SpeakResponse fallback(String message, String text) {
         return new VirtualHumanDtos.SpeakResponse(false, "local-avatar", "browser-tts", "FALLBACK", message, "", "", text);
+    }
+
+    private VirtualHumanDtos.SdkConfigResponse unavailable(String message) {
+        return new VirtualHumanDtos.SdkConfigResponse(false, "local-avatar", "UNAVAILABLE", message,
+                "", "", "", "", "", "xrtc");
     }
 
     private String shortMessage(Exception exception) {

@@ -51,6 +51,23 @@ public class XunfeiVirtualHumanClient {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * Creates the short-lived signed endpoint consumed by the official iFlytek
+     * Web SDK. This does not start a session and therefore does not consume an
+     * online-avatar concurrency slot.
+     */
+    public WebSdkConfig webSdkConfig(AiProviderService.RuntimeProvider provider) throws Exception {
+        URI signedUri = authorizedUri(endpoint(provider.baseUrl()), provider.apiKey(), provider.apiSecret());
+        return new WebSdkConfig(
+                signedUri.toString(),
+                provider.appId(),
+                provider.serviceId(),
+                normalizedAvatarId(provider.avatarModel()),
+                normalizedVoice(provider.voiceModel()),
+                "xrtc"
+        );
+    }
+
     public SessionResult start(AiProviderService.RuntimeProvider provider) throws Exception {
         return start(provider, normalizedAvatarId(provider.avatarModel()));
     }
@@ -333,5 +350,8 @@ public class XunfeiVirtualHumanClient {
     }
 
     public record SessionResult(String sessionId, String streamUrl, String rawPayload) {
+    }
+
+    public record WebSdkConfig(String signedUrl, String appId, String sceneId, String avatarId, String vcn, String protocol) {
     }
 }

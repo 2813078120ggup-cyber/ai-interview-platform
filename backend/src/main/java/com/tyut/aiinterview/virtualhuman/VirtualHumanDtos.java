@@ -25,6 +25,24 @@ public final class VirtualHumanDtos {
     ) {
     }
 
+    /**
+     * Browser-safe configuration for the official iFlytek Web SDK. The API
+     * secret is deliberately never returned to the browser.
+     */
+    public record SdkConfigResponse(
+            boolean enabled,
+            String provider,
+            String status,
+            String message,
+            String signedUrl,
+            String appId,
+            String sceneId,
+            String avatarId,
+            String vcn,
+            String protocol
+    ) {
+    }
+
     public record StopRequest(
             @NotBlank(message = "虚拟人会话 ID 不能为空") String sessionId
     ) {
