@@ -1,4 +1,15 @@
-import { ClipboardList, Layers3, Plus, Search, Users, X } from 'lucide-react'
+import {
+  CalendarClock,
+  ClipboardList,
+  Download,
+  Eye,
+  FileText,
+  Layers3,
+  Plus,
+  Search,
+  Users,
+  X,
+} from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
@@ -13,12 +24,39 @@ type Question = { id: string; content: string; questionType: string; difficulty:
 type QuestionBank = { id: string; name: string; bankCode: string; description?: string; status: number }
 type Page<T> = { records: T[]; total: number }
 type InterviewRow = Interview & { candidateId: string }
+type ReportItem = {
+  reportId: string
+  interviewId: string
+  interviewTitle: string
+  candidateName: string
+  candidateUsername: string
+  scheduledAt: string
+  totalScore: number
+  professionalScore: number
+  expressionScore: number
+  logicScore: number
+  adaptabilityScore: number
+  status: number
+}
+type ReportDetail = {
+  totalScore: number
+  professionalScore: number
+  expressionScore: number
+  logicScore: number
+  adaptabilityScore: number
+  summary: string
+  strengths: string
+  weaknesses: string
+  improvementSuggestions: string
+  status: number
+}
 type Template = { id: string; name: string; title: string; type: string; duration: number; questionCount: number; note: string }
 type FormState = { title: string; candidateId: string; scheduledAt: string; duration: number; type: string; source: 'question' | 'bank'; questionIds: string[]; questionBankId: string; questionCount: number }
 type BulkState = { templateId: string; candidateIds: string[]; scheduledAt: string; interval: number; questionBankId: string }
 
 const statusText: Record<number, string> = { 0: '待开始', 1: '进行中', 2: '已结束', 3: '已取消' }
 const statusTone = (status: number): 'default' | 'success' | 'warning' | 'danger' | 'info' => status === 1 ? 'success' : status === 0 ? 'info' : status === 2 ? 'default' : 'warning'
+const scoreItems: Array<[keyof ReportDetail, string]> = [['professionalScore', '专业能力'], ['expressionScore', '表达能力'], ['logicScore', '逻辑思维'], ['adaptabilityScore', '应变能力']]
 const localInput = () => { const date = new Date(Date.now() + 10 * 60_000); date.setSeconds(0, 0); return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}` }
 const toBackendTime = (value: string) => value.length === 16 ? `${value}:00` : value
 const dateText = (value?: string) => value?.replace('T', ' ').slice(0, 16) || '-'
@@ -34,6 +72,7 @@ const defaultBulk = (): BulkState => ({ templateId: templates[0].id, candidateId
 export function AdminInterviews() {
   const nav = useNavigate()
   const [items, setItems] = useState<InterviewRow[]>([])
+  const [reports, setReports] = useState<ReportItem[]>([])
   const [candidates, setCandidates] = useState<Candidate[]>([])
   const [questions, setQuestions] = useState<Question[]>([])
   const [banks, setBanks] = useState<QuestionBank[]>([])
@@ -43,31 +82,74 @@ export function AdminInterviews() {
   const [time, setTime] = useState('all')
   const [dialog, setDialog] = useState(false)
   const [bulkDialog, setBulkDialog] = useState(false)
+  const [selectedReport, setSelectedReport] = useState<ReportItem>()
+  const [reportDetail, setReportDetail] = useState<ReportDetail>()
+  const [reportLoading, setReportLoading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState<FormState>(defaultForm)
   const [bulk, setBulk] = useState<BulkState>(defaultBulk)
+
   const candidateById = useMemo(() => new Map(candidates.map(item => [String(item.id), item])), [candidates])
+  const reportByInterviewId = useMemo(() => new Map(reports.map(item => [String(item.interviewId), item])), [reports])
 
   async function load() {
     setLoading(true)
     try {
-      const [interviews, people, availableQuestions, result] = await Promise.all([request<InterviewRow[]>('/v1/interviews'), request<Candidate[]>('/v1/users/candidates'), request<Question[]>('/v1/question-banks/options'), request<Page<QuestionBank>>('/v1/question-banks?pageNo=1&pageSize=100&status=1')])
-      setItems(interviews); setCandidates(people); setQuestions(availableQuestions); setBanks(result.records); setError('')
-    } catch (reason) { setError(reason instanceof Error ? reason.message : '无法加载面试数据') }
-    finally { setLoading(false) }
+      const [interviews, people, availableQuestions, bankPage, reportPage] = await Promise.all([
+        request<InterviewRow[]>('/v1/interviews'),
+        request<Candidate[]>('/v1/users/candidates'),
+        request<Question[]>('/v1/question-banks/options'),
+        request<Page<QuestionBank>>('/v1/question-banks?pageNo=1&pageSize=100&status=1'),
+        request<Page<ReportItem>>('/v1/reports/page?pageNo=1&pageSize=300'),
+      ])
+      setItems(interviews)
+      setCandidates(people)
+      setQuestions(availableQuestions)
+      setBanks(bankPage.records)
+      setReports(reportPage.records)
+      setError('')
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : '无法加载面试数据')
+    } finally {
+      setLoading(false)
+    }
   }
+
   useEffect(() => { void load() }, [])
+
   const list = useMemo(() => items.filter(item => {
     const person = candidateById.get(String(item.candidateId))
     const keyword = search.toLowerCase()
     const date = new Date(item.scheduledAt)
     const now = new Date()
-    const matchesTime = time === 'all' || (time === 'today' && date.toDateString() === now.toDateString()) || (time === 'past' && date < now) || (time === 'next7' && date >= now && date <= new Date(now.getTime() + 7 * 86400000))
-    return (!keyword || [item.title, person?.realName, person?.username].some(value => value?.toLowerCase().includes(keyword))) && (!candidate || String(item.candidateId) === candidate) && (!status || String(item.status) === status) && matchesTime
+    const matchesTime = time === 'all'
+      || (time === 'today' && date.toDateString() === now.toDateString())
+      || (time === 'past' && date < now)
+      || (time === 'next7' && date >= now && date <= new Date(now.getTime() + 7 * 86400000))
+    return (!keyword || [item.title, person?.realName, person?.username].some(value => value?.toLowerCase().includes(keyword)))
+      && (!candidate || String(item.candidateId) === candidate)
+      && (!status || String(item.status) === status)
+      && matchesTime
   }).sort((a, b) => b.scheduledAt.localeCompare(a.scheduledAt)), [items, candidateById, search, candidate, status, time])
-  function applyTemplate(template: Template) { setForm(previous => ({ ...previous, title: template.title, duration: template.duration, type: template.type, questionCount: template.questionCount, source: 'bank' })) }
+
+  function applyTemplate(template: Template) {
+    setForm(previous => ({ ...previous, title: template.title, duration: template.duration, type: template.type, questionCount: template.questionCount, source: 'bank' }))
+  }
+
+  async function openReport(report: ReportItem) {
+    setSelectedReport(report)
+    setReportDetail(undefined)
+    setReportLoading(true)
+    try {
+      setReportDetail(await request<ReportDetail>(`/v1/interviews/${report.interviewId}/report`))
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : '无法加载报告详情')
+    } finally {
+      setReportLoading(false)
+    }
+  }
 
   async function create() {
     if (!form.title.trim() || !form.candidateId || !form.scheduledAt) { setError('请填写主题、候选人和预约时间'); return }
@@ -77,9 +159,14 @@ export function AdminInterviews() {
     try {
       await request('/v1/interviews', { method: 'POST', body: JSON.stringify({ title: form.title, candidateId: form.candidateId, scheduledAt: toBackendTime(form.scheduledAt), duration: form.duration, type: form.type, questionIds: form.source === 'question' ? form.questionIds : [], questionBankId: form.source === 'bank' ? form.questionBankId : undefined, questionCount: form.source === 'bank' ? form.questionCount : undefined }) })
       recordAuditLog({ module: '面试管理', action: '创建面试', operator: profile()?.realName ?? '管理员', target: form.title, detail: `为候选人 ${candidateById.get(form.candidateId)?.realName ?? form.candidateId} 创建面试` })
-      setDialog(false); setForm(defaultForm()); await load()
-    } catch (reason) { setError(reason instanceof Error ? reason.message : '创建面试失败') }
-    finally { setSaving(false) }
+      setDialog(false)
+      setForm(defaultForm())
+      await load()
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : '创建面试失败')
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function createBulk() {
@@ -95,18 +182,152 @@ export function AdminInterviews() {
         await request('/v1/interviews', { method: 'POST', body: JSON.stringify({ title: template.title, candidateId, scheduledAt: local, duration: template.duration, type: template.type, questionIds: [], questionBankId: bulk.questionBankId, questionCount: template.questionCount }) })
       }
       recordAuditLog({ module: '面试管理', action: '批量创建面试', operator: profile()?.realName ?? '管理员', target: template.name, detail: `批量安排 ${bulk.candidateIds.length} 场面试` })
-      setBulkDialog(false); setBulk(defaultBulk()); await load()
-    } catch (reason) { setError(reason instanceof Error ? reason.message : '批量创建失败') }
-    finally { setSaving(false) }
+      setBulkDialog(false)
+      setBulk(defaultBulk())
+      await load()
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : '批量创建失败')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return <div className="mx-auto max-w-7xl p-6 lg:p-10">
-    <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"><div><p className="text-sm font-semibold text-[var(--accent)]">AI INTERVIEW ADMIN</p><h1 className="mt-2 text-4xl font-bold tracking-tight">面试管理</h1><p className="mt-3 max-w-2xl text-muted-foreground">用模板、题库和批量排期快速组织 AI 模拟面试。支持任意题目多选与题库抽题。</p></div><div className="flex gap-2"><Button variant="secondary" onClick={() => setBulkDialog(true)}><Users className="h-4 w-4" />批量创建</Button><Button onClick={() => { setForm(defaultForm()); setDialog(true) }}><Plus className="h-4 w-4" />创建 AI 面试</Button></div></header>
+    <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <div>
+        <p className="text-sm font-semibold text-[var(--accent)]">AI INTERVIEW ADMIN</p>
+        <h1 className="mt-2 text-4xl font-bold tracking-tight">面试管理</h1>
+        <p className="mt-3 max-w-2xl text-muted-foreground">创建、检索和查看 AI 面试安排。已结束且生成报告的面试，可直接在操作栏查看评测报告。</p>
+      </div>
+      <div className="flex gap-2">
+        <Button variant="secondary" onClick={() => setBulkDialog(true)}><Users className="h-4 w-4" />批量创建</Button>
+        <Button onClick={() => { setForm(defaultForm()); setDialog(true) }}><Plus className="h-4 w-4" />创建 AI 面试</Button>
+      </div>
+    </header>
+
     {error && <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
-    <section className="mt-7 grid gap-4 md:grid-cols-4">{templates.map((item, index) => <Card key={item.id} motionDelay={index * .04} className="cursor-pointer bg-[linear-gradient(180deg,var(--surface),color-mix(in_srgb,var(--surface)_84%,var(--accent-soft)))]" onClick={() => { applyTemplate(item); setDialog(true) }}><Layers3 className="h-5 w-5 text-[var(--accent)]" /><h3 className="mt-4 font-bold">{item.name}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{item.note}</p><p className="mt-4 text-xs text-muted-foreground">{item.duration} 分钟 · {item.questionCount} 题</p></Card>)}</section>
-    <Card className="mt-7 p-0"><div className="flex flex-col gap-3 border-b border-border p-5 md:flex-row"><label className="flex h-12 flex-1 items-center gap-2 rounded-full border border-border bg-surface px-4"><Search className="h-4 w-4 text-muted-foreground" /><input value={search} onChange={event => setSearch(event.target.value)} className="w-full bg-transparent text-sm outline-none" placeholder="搜索主题、候选人姓名或账号" /></label><select className="h-12 rounded-full border border-border bg-surface px-4 text-sm" value={candidate} onChange={event => setCandidate(event.target.value)}><option value="">全部候选人</option>{candidates.map(item => <option key={item.id} value={item.id}>{item.realName}（{item.username}）</option>)}</select><select className="h-12 rounded-full border border-border bg-surface px-4 text-sm" value={time} onChange={event => setTime(event.target.value)}><option value="all">全部时间</option><option value="today">今天</option><option value="next7">未来 7 天</option><option value="past">已过期</option></select><select className="h-12 rounded-full border border-border bg-surface px-4 text-sm" value={status} onChange={event => setStatus(event.target.value)}><option value="">全部状态</option><option value="0">待开始</option><option value="1">进行中</option><option value="2">已结束</option><option value="3">已取消</option></select></div><div className="overflow-x-auto"><table className="w-full min-w-[860px] text-left text-sm"><thead className="border-b border-border bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground"><tr><th className="px-5 py-4">面试主题</th><th className="px-5 py-4">候选人</th><th className="px-5 py-4">预约时间</th><th className="px-5 py-4">状态</th><th className="px-5 py-4 text-right">操作</th></tr></thead><tbody>{loading ? <tr><td className="px-5 py-12 text-center text-muted-foreground" colSpan={5}>正在加载面试数据…</td></tr> : list.length ? list.map(item => { const person = candidateById.get(String(item.candidateId)); return <tr key={item.id} className="border-b border-border/70 last:border-0 hover:bg-muted/30"><td className="px-5 py-5 font-semibold">{item.title}</td><td className="px-5 py-5"><button onClick={() => person && nav(`/admin/candidates/${person.id}`)} className="font-medium hover:text-[var(--accent)]">{person?.realName ?? `候选人 #${item.candidateId}`}</button><p className="mt-1 text-xs text-muted-foreground">{person?.username}</p></td><td className="px-5 py-5 text-muted-foreground">{dateText(item.scheduledAt)}</td><td className="px-5 py-5"><Badge tone={statusTone(item.status)}>{statusText[item.status]}</Badge></td><td className="px-5 py-5 text-right">{item.status === 2 ? <button className="font-semibold text-[var(--accent)] hover:text-foreground" onClick={() => nav(`/admin/reports?interviewId=${item.id}`)}>查看报告</button> : <button className="font-semibold text-[var(--accent)] hover:text-foreground" onClick={() => nav(`/admin/interviews/${item.id}/review`)}>查看回顾</button>}</td></tr> }) : <tr><td colSpan={5} className="px-5 py-12 text-center text-muted-foreground">暂无符合条件的面试</td></tr>}</tbody></table></div></Card>
+
+    <section className="mt-7 grid gap-4 md:grid-cols-4">
+      {templates.map((item, index) => <Card key={item.id} motionDelay={index * .04} className="cursor-pointer bg-[linear-gradient(180deg,var(--surface),color-mix(in_srgb,var(--surface)_84%,var(--accent-soft)))]" onClick={() => { applyTemplate(item); setDialog(true) }}>
+        <Layers3 className="h-5 w-5 text-[var(--accent)]" />
+        <h3 className="mt-4 font-bold">{item.name}</h3>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.note}</p>
+        <p className="mt-4 text-xs text-muted-foreground">{item.duration} 分钟 · {item.questionCount} 题</p>
+      </Card>)}
+    </section>
+
+    <Card className="mt-7 p-0">
+      <div className="flex flex-col gap-3 border-b border-border p-5 md:flex-row">
+        <label className="flex h-12 flex-1 items-center gap-2 rounded-full border border-border bg-surface px-4">
+          <Search className="h-4 w-4 text-muted-foreground" />
+          <input value={search} onChange={event => setSearch(event.target.value)} className="w-full bg-transparent text-sm outline-none" placeholder="搜索主题、候选人姓名或账号" />
+        </label>
+        <select className="h-12 rounded-full border border-border bg-surface px-4 text-sm" value={candidate} onChange={event => setCandidate(event.target.value)}>
+          <option value="">全部候选人</option>
+          {candidates.map(item => <option key={item.id} value={item.id}>{item.realName}（{item.username}）</option>)}
+        </select>
+        <select className="h-12 rounded-full border border-border bg-surface px-4 text-sm" value={time} onChange={event => setTime(event.target.value)}>
+          <option value="all">全部时间</option>
+          <option value="today">今天</option>
+          <option value="next7">未来 7 天</option>
+          <option value="past">已过期</option>
+        </select>
+        <select className="h-12 rounded-full border border-border bg-surface px-4 text-sm" value={status} onChange={event => setStatus(event.target.value)}>
+          <option value="">全部状态</option>
+          <option value="0">待开始</option>
+          <option value="1">进行中</option>
+          <option value="2">已结束</option>
+          <option value="3">已取消</option>
+        </select>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[980px] text-left text-sm">
+          <thead className="border-b border-border bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+            <tr>
+              <th className="px-5 py-4">面试主题</th>
+              <th className="px-5 py-4">候选人</th>
+              <th className="px-5 py-4">预约时间</th>
+              <th className="px-5 py-4">状态</th>
+              <th className="px-5 py-4">报告</th>
+              <th className="px-5 py-4 text-right">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? <tr><td className="px-5 py-12 text-center text-muted-foreground" colSpan={6}>正在加载面试数据…</td></tr> : list.length ? list.map(item => {
+              const person = candidateById.get(String(item.candidateId))
+              const report = reportByInterviewId.get(String(item.id))
+              return <tr key={item.id} className="border-b border-border/70 last:border-0 hover:bg-muted/30">
+                <td className="px-5 py-5 font-semibold">{item.title}</td>
+                <td className="px-5 py-5">
+                  <button onClick={() => person && nav(`/admin/candidates/${person.id}`)} className="font-medium hover:text-[var(--accent)]">{person?.realName ?? `候选人 #${item.candidateId}`}</button>
+                  <p className="mt-1 text-xs text-muted-foreground">{person?.username}</p>
+                </td>
+                <td className="px-5 py-5 text-muted-foreground">{dateText(item.scheduledAt)}</td>
+                <td className="px-5 py-5"><Badge tone={statusTone(item.status)}>{statusText[item.status]}</Badge></td>
+                <td className="px-5 py-5">
+                  {report ? <Badge tone="success">已生成 · {report.totalScore} 分</Badge> : item.status === 2 ? <Badge tone="warning">生成中</Badge> : <span className="text-xs text-muted-foreground">面试结束后生成</span>}
+                </td>
+                <td className="px-5 py-5">
+                  <div className="flex justify-end gap-2">
+                    <Button variant="secondary" className="h-9 px-3" onClick={() => nav(`/admin/interviews/${item.id}/review`)}><Eye className="h-4 w-4" />回顾</Button>
+                    {report && <Button className="h-9 px-3" onClick={() => void openReport(report)}><FileText className="h-4 w-4" />查看报告</Button>}
+                  </div>
+                </td>
+              </tr>
+            }) : <tr><td colSpan={6} className="px-5 py-12 text-center text-muted-foreground">暂无符合条件的面试</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </Card>
+
     {dialog && <InterviewDialog saving={saving} onClose={() => setDialog(false)} onSubmit={create} form={form} setForm={setForm} candidates={candidates} questions={questions} banks={banks} templates={templates} applyTemplate={applyTemplate} />}
     {bulkDialog && <BulkDialog saving={saving} onClose={() => setBulkDialog(false)} onSubmit={createBulk} bulk={bulk} setBulk={setBulk} candidates={candidates} banks={banks} templates={templates} />}
+    {selectedReport && <ReportDialog report={selectedReport} detail={reportDetail} loading={reportLoading} onClose={() => { setSelectedReport(undefined); setReportDetail(undefined) }} />}
+  </div>
+}
+
+function ReportDialog({ report, detail, loading, onClose }: { report: ReportItem; detail?: ReportDetail; loading: boolean; onClose: () => void }) {
+  const average = detail ? Math.round(scoreItems.reduce((sum, [key]) => sum + Number(detail[key]), 0) / scoreItems.length) : 0
+  return <div className="fixed inset-0 z-50 overflow-y-auto bg-[var(--primary)]/30 p-4 backdrop-blur-sm">
+    <article className="mx-auto my-7 max-w-5xl rounded-[30px] bg-surface p-6 shadow-2xl sm:p-8">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-sm font-semibold text-[var(--accent)]">{report.candidateName} · INTERVIEW REPORT</p>
+          <h2 className="mt-1 text-2xl font-bold">{report.interviewTitle}</h2>
+          <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground"><CalendarClock className="h-4 w-4" />{dateText(report.scheduledAt)}</p>
+        </div>
+        <div className="flex items-center gap-2 no-print">
+          <Button variant="secondary" onClick={() => window.print()}><Download className="h-4 w-4" />导出 PDF</Button>
+          <button onClick={onClose} className="rounded-xl p-2 hover:bg-muted"><X className="h-5 w-5" /></button>
+        </div>
+      </div>
+
+      {loading || !detail ? <div className="py-20 text-center text-muted-foreground">正在加载报告详情…</div> : <>
+        <section className="mt-7 grid gap-6 rounded-[26px] bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] p-6 text-white md:grid-cols-[1fr_auto] md:items-center">
+          <div>
+            <Badge tone={detail.status === 1 ? 'success' : 'warning'}>{detail.status === 1 ? '已发布' : '草稿'}</Badge>
+            <h3 className="mt-4 text-2xl font-bold">综合得分 {detail.totalScore}</h3>
+            <p className="mt-3 max-w-3xl leading-7 text-white/85">{detail.summary}</p>
+          </div>
+          <div className="grid h-32 w-32 place-items-center rounded-full border-8 border-white/25 bg-white/10 text-center">
+            <div><strong className="text-4xl">{detail.totalScore}</strong><span className="block text-xs text-white/70">综合得分</span></div>
+          </div>
+        </section>
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {scoreItems.map(([key, label]) => <Card key={key}>
+            <p className="text-sm text-muted-foreground">{label}</p>
+            <strong className="mt-3 block text-3xl">{detail[key]}</strong>
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-[var(--primary)]" style={{ width: `${detail[key]}%` }} /></div>
+          </Card>)}
+        </div>
+        <div className="mt-6 grid gap-4 lg:grid-cols-3">
+          <Card><h3 className="font-semibold text-[var(--accent)]">优势分析</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">{detail.strengths}</p></Card>
+          <Card><h3 className="font-semibold text-amber-700">待提升项</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">{detail.weaknesses}</p></Card>
+          <Card><h3 className="font-semibold text-[var(--accent)]">改进建议</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">{detail.improvementSuggestions}</p></Card>
+        </div>
+        <p className="mt-5 text-right text-sm text-muted-foreground">四项能力平均值：{average}</p>
+      </>}
+    </article>
   </div>
 }
 
