@@ -1,4 +1,4 @@
-import { Bell, BookOpen, Bot, CalendarDays, History, LayoutDashboard, LogOut, Moon, Sun, UserRound } from 'lucide-react'
+import { Bell, BookOpen, Bot, CalendarDays, History, LayoutDashboard, LogOut, Moon, Settings2, Sun, UserRound } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { PageTransition } from '@/components/page-transition'
@@ -12,6 +12,7 @@ const nav = [
   ['/admin/interviews', '面试管理', CalendarDays],
   ['/admin/candidates', '候选人', UserRound],
   ['/admin/question-banks', '题库管理', BookOpen],
+  ['/admin/settings', '系统设置', Settings2],
   ['/admin/audit-logs', '操作日志', History],
 ] as const
 

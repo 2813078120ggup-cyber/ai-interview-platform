@@ -19,6 +19,7 @@ import { AdminInterviews } from '@/pages/admin-interviews'
 import { AdminQuestionBanks } from '@/pages/admin-question-banks'
 import { AdminQuestions } from '@/pages/admin-questions'
 import { AdminReports } from '@/pages/admin-reports'
+import { AdminSettings } from '@/pages/admin-settings'
 import { AdminWorkspace } from '@/pages/admin-workspace'
 import { AbilityDashboard } from '@/pages/ability-dashboard'
 import { CandidateLibrary } from '@/pages/candidate-library'
@@ -225,6 +226,7 @@ export function App() {
     <Route path="/admin/question-banks/:id" element={<Protected admin><AdminPageShell><AdminQuestions /></AdminPageShell></Protected>} />
     <Route path="/admin/candidates" element={<Protected admin><AdminPageShell><AdminCandidates /></AdminPageShell></Protected>} />
     <Route path="/admin/candidates/:id" element={<Protected admin><AdminPageShell><AdminCandidateDetail /></AdminPageShell></Protected>} />
+    <Route path="/admin/settings" element={<Protected admin><AdminPageShell><AdminSettings /></AdminPageShell></Protected>} />
     <Route path="/admin/audit-logs" element={<Protected admin><AdminPageShell><AdminAuditLog /></AdminPageShell></Protected>} />
     <Route path="/admin" element={<Protected admin><Navigate to="/admin/workspace" replace /></Protected>} />
     <Route path="/candidate/interviews/:id/room" element={<Protected><PageTransition><InterviewRoom /></PageTransition></Protected>} />
