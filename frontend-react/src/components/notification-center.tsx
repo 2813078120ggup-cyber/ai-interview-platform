@@ -1,5 +1,5 @@
 import { Bell, CheckCheck, Inbox, Send } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -24,6 +24,7 @@ function shortDate(value?: string) {
 export function NotificationCenter({ role }: NotificationCenterProps) {
   const current = profile()
   const currentUserId = String(current?.id || current?.username || 'guest')
+  const rootRef = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(false)
   const [items, setItems] = useState<InterviewNotification[]>([])
 
@@ -39,6 +40,27 @@ export function NotificationCenter({ role }: NotificationCenterProps) {
       window.removeEventListener('storage', onChange)
     }
   }, [])
+
+  useEffect(() => {
+    if (!open) return
+
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      const target = event.target
+      if (target instanceof Node && rootRef.current?.contains(target)) return
+      setOpen(false)
+    }
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+
+    document.addEventListener('pointerdown', closeOnOutsidePointer)
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsidePointer)
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [open])
 
   const visibleItems = useMemo(() => {
     if (role === 'admin') return items
@@ -56,7 +78,7 @@ export function NotificationCenter({ role }: NotificationCenterProps) {
   }
 
   return (
-    <div className="relative">
+    <div ref={rootRef} className="relative">
       <Button
         variant="ghost"
         className="relative h-10 w-10 rounded-full px-0"
