@@ -1,4 +1,5 @@
 import {
+  Bell,
   CalendarClock,
   ClipboardList,
   Download,
@@ -17,6 +18,13 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { recordAuditLog } from '@/lib/audit-log'
 import { request, type Interview } from '@/lib/api'
+import {
+  fillTemplate,
+  listTemplates,
+  saveTemplate,
+  sendNotification,
+  type NotificationTemplate,
+} from '@/lib/notifications'
 import { exportReportPdf } from '@/lib/report-export'
 import { profile } from '@/lib/session'
 
@@ -83,6 +91,7 @@ export function AdminInterviews() {
   const [time, setTime] = useState('all')
   const [dialog, setDialog] = useState(false)
   const [bulkDialog, setBulkDialog] = useState(false)
+  const [noticeTarget, setNoticeTarget] = useState<InterviewRow>()
   const [selectedReport, setSelectedReport] = useState<ReportItem>()
   const [reportDetail, setReportDetail] = useState<ReportDetail>()
   const [reportLoading, setReportLoading] = useState(false)
@@ -270,6 +279,7 @@ export function AdminInterviews() {
                 </td>
                 <td className="px-5 py-5">
                   <div className="flex justify-end gap-2">
+                    <Button variant="secondary" className="h-9 px-3" onClick={() => setNoticeTarget(item)}><Bell className="h-4 w-4" />通知</Button>
                     <Button variant="secondary" className="h-9 px-3" onClick={() => nav(`/admin/interviews/${item.id}/review`)}><Eye className="h-4 w-4" />回顾</Button>
                     {report && <Button className="h-9 px-3" onClick={() => void openReport(report)}><FileText className="h-4 w-4" />查看报告</Button>}
                   </div>
@@ -283,7 +293,122 @@ export function AdminInterviews() {
 
     {dialog && <InterviewDialog saving={saving} onClose={() => setDialog(false)} onSubmit={create} form={form} setForm={setForm} candidates={candidates} questions={questions} banks={banks} templates={templates} applyTemplate={applyTemplate} />}
     {bulkDialog && <BulkDialog saving={saving} onClose={() => setBulkDialog(false)} onSubmit={createBulk} bulk={bulk} setBulk={setBulk} candidates={candidates} banks={banks} templates={templates} />}
+    {noticeTarget && <NotificationDialog interview={noticeTarget} candidate={candidateById.get(String(noticeTarget.candidateId))} onClose={() => setNoticeTarget(undefined)} />}
     {selectedReport && <ReportDialog report={selectedReport} detail={reportDetail} loading={reportLoading} onClose={() => { setSelectedReport(undefined); setReportDetail(undefined) }} />}
+  </div>
+}
+
+function NotificationDialog({ interview, candidate, onClose }: { interview: InterviewRow; candidate?: Candidate; onClose: () => void }) {
+  const candidateName = candidate?.realName || candidate?.username || `候选人 #${interview.candidateId}`
+  const scheduledAt = dateText(interview.scheduledAt)
+  const admin = profile()
+  const [templates, setTemplates] = useState<NotificationTemplate[]>(() => listTemplates())
+  const [templateId, setTemplateId] = useState(templates[0]?.id || '')
+  const [title, setTitle] = useState(() => fillTemplate(templates[0]?.title || '面试通知', { candidateName, interviewTitle: interview.title, scheduledAt }))
+  const [content, setContent] = useState(() => fillTemplate(templates[0]?.content || '', { candidateName, interviewTitle: interview.title, scheduledAt }))
+  const [templateName, setTemplateName] = useState('')
+  const [savingTemplate, setSavingTemplate] = useState(false)
+
+  function applyNoticeTemplate(id: string) {
+    setTemplateId(id)
+    const template = templates.find(item => item.id === id)
+    if (!template) return
+    setTitle(fillTemplate(template.title, { candidateName, interviewTitle: interview.title, scheduledAt }))
+    setContent(fillTemplate(template.content, { candidateName, interviewTitle: interview.title, scheduledAt }))
+  }
+
+  function createTemplate() {
+    if (!templateName.trim() || !title.trim() || !content.trim()) return
+    const item = saveTemplate({ name: templateName.trim(), title: title.trim(), content: content.trim() })
+    const nextTemplates = listTemplates()
+    setTemplates(nextTemplates)
+    setTemplateId(item.id)
+    setTemplateName('')
+    setSavingTemplate(false)
+  }
+
+  function submit() {
+    if (!title.trim() || !content.trim()) return
+    sendNotification({
+      title: title.trim(),
+      content: content.trim(),
+      interviewId: String(interview.id),
+      interviewTitle: interview.title,
+      scheduledAt: interview.scheduledAt,
+      candidate: {
+        userId: String(candidate?.id || interview.candidateId),
+        username: candidate?.username || '',
+        realName: candidateName,
+      },
+      sender: {
+        userId: String(admin?.id || admin?.username || 'admin'),
+        username: admin?.username || 'admin',
+        realName: admin?.realName || '管理员',
+      },
+    })
+    recordAuditLog({
+      module: '面试管理',
+      action: '发送通知',
+      operator: admin?.realName || admin?.username || '管理员',
+      target: candidateName,
+      detail: `向 ${candidateName} 发送「${interview.title}」通知：${title.trim()}`,
+    })
+    onClose()
+  }
+
+  return <div className="fixed inset-0 z-50 overflow-y-auto bg-black/35 p-4 backdrop-blur-sm">
+    <div className="mx-auto my-8 max-w-3xl rounded-[32px] border border-border bg-surface p-7 shadow-2xl">
+      <div className="flex items-start justify-between gap-5">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">SEND NOTICE</p>
+          <h2 className="mt-1 text-2xl font-black">发送面试通知</h2>
+          <p className="mt-2 text-sm text-muted-foreground">通知将发送给 {candidateName}，候选人可在顶部铃铛中查看。</p>
+        </div>
+        <button className="rounded-full p-2 hover:bg-muted" onClick={onClose}><X className="h-5 w-5" /></button>
+      </div>
+
+      <div className="mt-6 rounded-[24px] border border-border bg-muted/30 p-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">INTERVIEW</p>
+        <div className="mt-2 grid gap-2 text-sm sm:grid-cols-3">
+          <strong className="sm:col-span-1">{interview.title}</strong>
+          <span className="text-muted-foreground">候选人：{candidateName}</span>
+          <span className="text-muted-foreground">时间：{scheduledAt}</span>
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-5">
+        <label className="text-sm font-semibold">发送模板
+          <select value={templateId} onChange={event => applyNoticeTemplate(event.target.value)} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal">
+            {templates.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select>
+        </label>
+        <label className="text-sm font-semibold">通知标题
+          <input value={title} onChange={event => setTitle(event.target.value)} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal outline-none focus:border-[var(--accent)]" />
+        </label>
+        <label className="text-sm font-semibold">通知内容
+          <textarea value={content} onChange={event => setContent(event.target.value)} rows={5} className="mt-2 w-full rounded-2xl border border-border bg-background p-4 font-normal leading-7 outline-none focus:border-[var(--accent)]" />
+        </label>
+
+        <div className="rounded-[24px] border border-border bg-background p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="font-semibold">保存为发送模板</p>
+              <p className="mt-1 text-xs text-muted-foreground">可使用变量：{'{candidateName}'}、{'{interviewTitle}'}、{'{scheduledAt}'}。</p>
+            </div>
+            <Button variant="secondary" onClick={() => setSavingTemplate(value => !value)}>{savingTemplate ? '收起' : '新建模板'}</Button>
+          </div>
+          {savingTemplate && <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+            <input value={templateName} onChange={event => setTemplateName(event.target.value)} placeholder="模板名称，例如：复盘提醒" className="h-11 flex-1 rounded-2xl border border-border bg-surface px-4 outline-none focus:border-[var(--accent)]" />
+            <Button onClick={createTemplate}>保存模板</Button>
+          </div>}
+        </div>
+      </div>
+
+      <div className="mt-7 flex justify-end gap-3">
+        <Button variant="secondary" onClick={onClose}>取消</Button>
+        <Button onClick={submit}><Bell className="h-4 w-4" />发送通知</Button>
+      </div>
+    </div>
   </div>
 }
 

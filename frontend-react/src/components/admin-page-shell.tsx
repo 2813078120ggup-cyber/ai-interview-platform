@@ -1,6 +1,7 @@
-import { Bell, BookOpen, Bot, CalendarDays, History, LayoutDashboard, LogOut, Moon, Settings2, Sun, UserRound } from 'lucide-react'
+import { BookOpen, Bot, CalendarDays, History, LayoutDashboard, LogOut, Moon, Settings2, Sun, UserRound } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
+import { NotificationCenter } from '@/components/notification-center'
 import { PageTransition } from '@/components/page-transition'
 import { Button } from '@/components/ui/button'
 import { clearSession, profile } from '@/lib/session'
@@ -48,7 +49,7 @@ export function AdminPageShell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-30 flex h-20 items-center justify-end border-b border-border bg-background/82 px-8 backdrop-blur-xl">
         <div className="flex items-center gap-2">
           <Button variant="ghost" className="h-10 w-10 rounded-full px-0" onClick={toggleTheme} aria-label={dark ? '切换为浅色模式' : '切换为深色模式'}>{dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</Button>
-          <Button variant="ghost" className="h-10 w-10 rounded-full px-0" aria-label="通知"><Bell className="h-4 w-4" /></Button>
+          <NotificationCenter role="admin" />
           <Button variant="ghost" className="h-10 w-10 rounded-full px-0" onClick={logout} aria-label="退出登录" title="退出登录"><LogOut className="h-4 w-4" /></Button>
           <span title={current?.realName || '管理员'} className="grid h-10 w-10 place-items-center rounded-full bg-[var(--warning)] text-sm font-bold text-[var(--warning-foreground)]">{initials}</span>
         </div>
