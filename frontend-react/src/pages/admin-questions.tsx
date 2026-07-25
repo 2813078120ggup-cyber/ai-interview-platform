@@ -240,7 +240,7 @@ export function AdminQuestions() {
           </div>
           <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
             <Button variant="secondary" className="h-9 px-3" onClick={() => openEdit(question)}><Pencil className="h-3.5 w-3.5" />修改</Button>
-            <Button variant="ghost" className="h-9 px-3 text-rose-700 hover:bg-rose-50" disabled={deletingId === question.id} onClick={() => void remove(question)}><Trash2 className="h-3.5 w-3.5" />删除</Button>
+            <Button variant="secondary" className="h-9 border-rose-200 bg-rose-50/70 px-3 text-rose-700 hover:border-rose-300 hover:bg-rose-100 hover:text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/20 dark:text-rose-200 dark:hover:bg-rose-950/40" disabled={deletingId === question.id} onClick={() => void remove(question)}><Trash2 className="h-3.5 w-3.5" />删除</Button>
           </div>
         </article>)}
         {!items.length && <p className="p-12 text-center text-sm text-muted-foreground">该题库暂时没有匹配题目</p>}
