@@ -305,6 +305,8 @@ export function AdminInterviews() {
         })
       } else {
         await request(`/v1/interviews/${interview.id}`, { method: 'DELETE' })
+        setItems(previous => previous.filter(item => String(item.id) !== String(interview.id)))
+        setReports(previous => previous.filter(item => String(item.interviewId) !== String(interview.id)))
         recordAuditLog({
           module: '面试管理',
           action: '删除面试',
@@ -314,7 +316,7 @@ export function AdminInterviews() {
         })
       }
       setActionTarget(undefined)
-      await load()
+      if (type === 'pass') await load()
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : '操作失败，请稍后重试')
     } finally {
@@ -723,7 +725,7 @@ function InterviewDialog({
         {form.source === 'question' ? <div className="grid gap-5">
           <label className="text-sm font-semibold">选择题库
             <select value={form.questionBankId} onChange={event => { const bankId = event.target.value; setForm({ ...form, questionBankId: bankId, questionIds: [] }); void loadBankQuestions(bankId) }} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal">
-              <option value="">先选择管理后台题库</option>
+              <option value="">请选择管理后台题库</option>
               {banks.map(item => <option key={item.id} value={item.id}>{item.name}（{item.bankCode}）</option>)}
             </select>
           </label>
@@ -801,7 +803,7 @@ function InterviewDialog({
         {bulk.source === 'question' ? <div className="grid gap-5">
           <label className="text-sm font-semibold">选择题库
             <select value={bulk.questionBankId} onChange={event => { const bankId = event.target.value; setBulk({ ...bulk, questionBankId: bankId, questionIds: [] }); void loadBankQuestions(bankId) }} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal">
-              <option value="">先选择管理后台题库</option>
+              <option value="">请选择管理后台题库</option>
               {banks.map(item => <option key={item.id} value={item.id}>{item.name}（{item.bankCode}）</option>)}
             </select>
           </label>
