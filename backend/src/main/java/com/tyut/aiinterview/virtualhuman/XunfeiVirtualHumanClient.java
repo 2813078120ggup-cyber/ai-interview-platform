@@ -161,9 +161,11 @@ public class XunfeiVirtualHumanClient {
     private URI endpoint(String baseUrl) {
         String root = baseUrl == null ? "" : baseUrl.trim();
         if (root.isBlank() || root.contains("待配置")) root = DEFAULT_ENDPOINT;
+        root = root.replace("vms.cn-huadong-1.xf-yun.com", "avatar.cn-huadong-1.xf-yun.com");
         if (root.startsWith("http://")) root = "ws://" + root.substring("http://".length());
         if (root.startsWith("https://")) root = "wss://" + root.substring("https://".length());
         root = root.replaceAll("/+$", "");
+        root = root.replace("/v1/private/vms2d_start", "").replace("/v1/private/vms2d_ctrl", "");
         if (!root.endsWith("/v1/interact")) root = root + "/v1/interact";
         return URI.create(root);
     }

@@ -259,7 +259,7 @@ public class AiProviderService {
         if (mapper.exists(new LambdaQueryWrapper<AiProviderConfig>().eq(AiProviderConfig::getCode, "xunfei-virtual-human"))) {
             return;
         }
-        insertDefault("讯飞虚拟人", "xunfei-virtual-human", "virtual-human", "https://vms.cn-huadong-1.xf-yun.com", "请填写接口服务ID", "x4_lingxiaoxuan_oral", "请填写 avatarId", false, false, false,
+        insertDefault("讯飞虚拟人", "xunfei-virtual-human", "virtual-human", "wss://avatar.cn-huadong-1.xf-yun.com/v1/interact", "请填写接口服务ID", "x4_lingxiaoxuan_oral", "请填写 avatarId", false, false, false,
                 "讯飞 AI 虚拟人技术接入项。填写接口服务ID、讯飞 AppID、API Key、API Secret 和虚拟人形象 ID 后，面试间会优先驱动讯飞虚拟人播报。");
     }
 
