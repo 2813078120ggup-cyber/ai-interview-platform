@@ -20,7 +20,6 @@ import { AdminInterviewReview } from '@/pages/admin-interview-review'
 import { AdminInterviews } from '@/pages/admin-interviews'
 import { AdminQuestionBanks } from '@/pages/admin-question-banks'
 import { AdminQuestions } from '@/pages/admin-questions'
-import { AdminReports } from '@/pages/admin-reports'
 import { AdminSettings } from '@/pages/admin-settings'
 import { AdminWorkspace } from '@/pages/admin-workspace'
 import { AbilityDashboard } from '@/pages/ability-dashboard'
@@ -225,7 +224,6 @@ export function App() {
       <Route path="/admin/interviews" element={<Protected admin><AdminPageShell><AdminInterviews /></AdminPageShell></Protected>} />
       <Route path="/admin/interviews/:id/review" element={<Protected admin><AdminPageShell><AdminInterviewReview /></AdminPageShell></Protected>} />
       <Route path="/admin/interviews/:id/room" element={<Protected admin><AdminPageShell><AdminInterviewReview /></AdminPageShell></Protected>} />
-      <Route path="/admin/reports" element={<Protected admin><AdminPageShell><AdminReports /></AdminPageShell></Protected>} />
       <Route path="/admin/question-banks" element={<Protected admin><AdminPageShell><AdminQuestionBanks /></AdminPageShell></Protected>} />
       <Route path="/admin/question-banks/:id" element={<Protected admin><AdminPageShell><AdminQuestions /></AdminPageShell></Protected>} />
       <Route path="/admin/candidates" element={<Protected admin><AdminPageShell><AdminCandidates /></AdminPageShell></Protected>} />

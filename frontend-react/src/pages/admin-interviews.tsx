@@ -13,7 +13,7 @@ import {
   X,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ReportDetailView, type ReportDetailData } from '@/components/report-detail-view'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -75,6 +75,7 @@ const defaultBulk = (): BulkState => ({ templateId: templates[0].id, candidateId
 
 export function AdminInterviews() {
   const nav = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [items, setItems] = useState<InterviewRow[]>([])
   const [reports, setReports] = useState<ReportItem[]>([])
   const [candidates, setCandidates] = useState<Candidate[]>([])
@@ -101,6 +102,7 @@ export function AdminInterviews() {
 
   const candidateById = useMemo(() => new Map(candidates.map(item => [String(item.id), item])), [candidates])
   const reportByInterviewId = useMemo(() => new Map(reports.map(item => [String(item.interviewId), item])), [reports])
+  const targetReportInterviewId = searchParams.get('reportInterviewId')
 
   async function load() {
     setLoading(true)
@@ -126,6 +128,22 @@ export function AdminInterviews() {
   }
 
   useEffect(() => { void load() }, [])
+
+  useEffect(() => {
+    if (loading || !targetReportInterviewId || selectedReport || reportLoading) return
+    const report = reportByInterviewId.get(targetReportInterviewId)
+    if (report) void openReport(report)
+  }, [loading, targetReportInterviewId, reportByInterviewId, selectedReport, reportLoading])
+
+  function closeReport() {
+    setSelectedReport(undefined)
+    setReportDetail(undefined)
+    if (targetReportInterviewId) {
+      const next = new URLSearchParams(searchParams)
+      next.delete('reportInterviewId')
+      setSearchParams(next, { replace: true })
+    }
+  }
 
   const list = useMemo(() => items.filter(item => {
     const person = candidateById.get(String(item.candidateId))
@@ -356,7 +374,7 @@ export function AdminInterviews() {
     {bulkDialog && <BulkDialog saving={saving} onClose={() => setBulkDialog(false)} onSubmit={createBulk} bulk={bulk} setBulk={setBulk} candidates={candidates} banks={banks} templates={templates} />}
     {noticeTarget && <NotificationDialog interview={noticeTarget} candidate={candidateById.get(String(noticeTarget.candidateId))} onClose={() => setNoticeTarget(undefined)} />}
     {actionTarget && <InterviewActionDialog target={actionTarget} candidate={candidateById.get(String(actionTarget.interview.candidateId))} busy={actionBusy} onClose={() => setActionTarget(undefined)} onConfirm={confirmInterviewAction} />}
-    {selectedReport && <ReportDialog report={selectedReport} detail={reportDetail} loading={reportLoading} onClose={() => { setSelectedReport(undefined); setReportDetail(undefined) }} />}
+    {selectedReport && <ReportDialog report={selectedReport} detail={reportDetail} loading={reportLoading} onClose={closeReport} />}
   </div>
 }
 
