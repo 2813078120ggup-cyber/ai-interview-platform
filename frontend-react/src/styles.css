@@ -198,7 +198,7 @@ button:disabled { cursor: not-allowed; }
 
 .login-ai-stage {
   position: relative;
-  min-height: 260px;
+  min-height: 330px;
   overflow: hidden;
   border-radius: 30px;
   border: 0;
@@ -212,7 +212,7 @@ button:disabled { cursor: not-allowed; }
   content: "";
   position: absolute;
   left: 50%;
-  top: 47%;
+  top: 39%;
   width: 255px;
   height: 255px;
   border-radius: 999px;
@@ -233,7 +233,7 @@ button:disabled { cursor: not-allowed; }
   content: "";
   position: absolute;
   left: 50%;
-  top: 47%;
+  top: 39%;
   width: 130px;
   height: 130px;
   border-radius: 999px;
@@ -254,7 +254,7 @@ button:disabled { cursor: not-allowed; }
 .login-pulse-ring {
   position: absolute;
   left: 50%;
-  top: 47%;
+  top: 39%;
   border-radius: 999px;
   border: 1.5px solid color-mix(in srgb, var(--foreground) 12%, transparent);
   transform: translate(-50%, -50%);
@@ -270,7 +270,7 @@ button:disabled { cursor: not-allowed; }
 .login-solid-orbit {
   position: absolute;
   left: 50%;
-  top: 47%;
+  top: 39%;
   border-radius: 999px;
   transform: translate(-50%, -50%);
 }
@@ -302,7 +302,7 @@ button:disabled { cursor: not-allowed; }
 .login-ai-core {
   position: absolute;
   left: 50%;
-  top: 47%;
+  top: 39%;
   z-index: 3;
   display: grid;
   width: 58px;
@@ -324,7 +324,7 @@ button:disabled { cursor: not-allowed; }
 .login-orbit-icon {
   position: absolute;
   left: 50%;
-  top: 47%;
+  top: 39%;
   z-index: 4;
   display: grid;
   width: 38px;
@@ -348,7 +348,7 @@ button:disabled { cursor: not-allowed; }
 .login-neural-svg {
   position: absolute;
   left: 50%;
-  top: 47%;
+  top: 39%;
   z-index: 2;
   width: 260px;
   height: 260px;
@@ -369,7 +369,7 @@ button:disabled { cursor: not-allowed; }
 
 .login-waveform {
   position: absolute;
-  bottom: 24px;
+  bottom: 104px;
   left: 50%;
   z-index: 3;
   display: flex;
@@ -398,11 +398,11 @@ button:disabled { cursor: not-allowed; }
 
 .login-live-card {
   position: absolute;
-  right: 18px;
-  bottom: 18px;
+  left: 50%;
+  bottom: 10px;
   z-index: 6;
-  width: min(235px, calc(100% - 36px));
-  border-radius: 22px;
+  width: min(345px, calc(100% - 42px));
+  border-radius: 26px;
   border: 1px solid rgba(255, 255, 255, .78);
   background:
     linear-gradient(145deg, rgba(255, 255, 255, .88), rgba(255, 255, 255, .62)),
@@ -410,8 +410,23 @@ button:disabled { cursor: not-allowed; }
   box-shadow:
     0 18px 46px rgba(20, 18, 17, .12),
     inset 0 1px 0 rgba(255, 255, 255, .84);
-  padding: 14px;
+  padding: 15px 17px;
   backdrop-filter: blur(16px);
+  transform: translateX(-50%);
+}
+
+.login-live-card::after {
+  content: "";
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 10px color-mix(in srgb, var(--accent) 12%, transparent);
+  transform: translateY(-50%);
+  animation: login-status-pulse 2s ease-in-out infinite;
 }
 
 .login-status-dot {
@@ -453,6 +468,35 @@ button:disabled { cursor: not-allowed; }
 .login-magnetic-card {
   position: relative;
   overflow: hidden;
+}
+
+.login-feature-stack {
+  position: relative;
+}
+
+.login-feature-stack::before {
+  content: "";
+  position: absolute;
+  left: 22px;
+  top: 44px;
+  bottom: 44px;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in srgb, var(--accent) 24%, transparent),
+    transparent
+  );
+}
+
+.login-feature-card {
+  min-height: 116px;
+  display: flex;
+  align-items: center;
+  border-color: color-mix(in srgb, var(--accent) 16%, var(--border)) !important;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, .84), rgba(255, 255, 255, .62)) !important;
+  box-shadow: 0 14px 36px rgba(20,18,17,.065) !important;
 }
 
 .login-magnetic-card::before {

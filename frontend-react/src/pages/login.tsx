@@ -206,7 +206,7 @@ export function LoginPage() {
             </motion.p>
           </div>
 
-          <div className="relative z-10 grid gap-5 xl:grid-cols-[1fr_.78fr]">
+          <div className="relative z-10 grid gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(230px,.72fr)] xl:items-center">
             <div className="login-ai-stage">
               <span className="login-pulse-ring" />
               <span className="login-pulse-ring delay-1000" />
@@ -223,7 +223,7 @@ export function LoginPage() {
                 <Sparkles className="h-6 w-6" />
               </span>
               {[Mic, Video, FileText, BarChart3].map((Icon, index) => (
-                <span key={index} className="login-orbit-icon" style={{ animationDelay: `${index * -3.5}s` }}>
+                <span key={index} className="login-orbit-icon" style={{ animationDelay: `${index * -2.75}s` }}>
                   <Icon className="h-4 w-4" />
                 </span>
               ))}
@@ -254,7 +254,7 @@ export function LoginPage() {
               </motion.div>
             </div>
 
-            <div className="grid content-end gap-3">
+            <div className="login-feature-stack grid content-center gap-3">
               {features.map(({ title, desc, icon: Icon }, index) => (
                 <motion.div
                   key={title}
@@ -263,13 +263,17 @@ export function LoginPage() {
                   transition={{ delay: 0.36 + index * 0.08, duration: 0.38 }}
                   whileHover={reduceMotion ? undefined : { y: -8, scale: 1.025, rotate: index === 1 ? 0.7 : -0.7 }}
                   whileTap={reduceMotion ? undefined : { scale: 0.985 }}
-                  className="login-magnetic-card rounded-3xl border border-[#ded8ce] bg-white/72 p-4 shadow-[0_10px_34px_rgba(20,18,17,.05)] backdrop-blur"
+                  className="login-magnetic-card login-feature-card rounded-3xl border border-[#ded8ce] bg-white/72 p-4 shadow-[0_10px_34px_rgba(20,18,17,.05)] backdrop-blur"
                 >
-                  <span className="grid h-9 w-9 place-items-center rounded-2xl bg-[#f0ece5] text-[var(--accent)]">
-                    <Icon className="h-4 w-4" />
-                  </span>
-                  <p className="mt-3 font-bold">{title}</p>
-                  <p className="mt-1 text-xs leading-5 text-muted-foreground">{desc}</p>
+                  <div className="flex items-start gap-3">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#f0ece5] text-[var(--accent)]">
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <p className="font-bold leading-none">{title}</p>
+                      <p className="mt-2 text-xs leading-5 text-muted-foreground">{desc}</p>
+                    </div>
+                  </div>
                 </motion.div>
               ))}
             </div>
