@@ -52,6 +52,7 @@ export function InterviewRoom() {
   const video = useRef<HTMLVideoElement>(null)
   const stream = useRef<MediaStream | null>(null)
   const recognition = useRef<SpeechRecognitionLike | null>(null)
+  const speechToken = useRef(0)
   const question = questions[active]
   const finished = interview?.status === 2
   const choiceQuestion = choiceTypes.includes(question?.questionType ?? '')
@@ -129,14 +130,26 @@ export function InterviewRoom() {
 
   function speak(text: string, force = false) {
     if ((!tts && !force) || !text || !('speechSynthesis' in window)) return
+    const token = speechToken.current + 1
+    speechToken.current = token
     const synth = window.speechSynthesis
+    const speechErrorMessage = '\u8bed\u97f3\u6717\u8bfb\u672a\u80fd\u542f\u52a8\uff0c\u8bf7\u70b9\u51fb\u201c\u91cd\u65b0\u6717\u8bfb\u672c\u9898\u201d\u540e\u91cd\u8bd5\u3002'
     synth.cancel()
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.lang = 'zh-CN'; utterance.rate = .95; utterance.pitch = 1
     const voice = synth.getVoices().find(item => item.lang.toLowerCase().startsWith('zh'))
     if (voice) utterance.voice = voice
-    utterance.onerror = () => setError('语音朗读未能启动，请点击“重新朗读本题”后重试。')
-    const start = () => synth.speak(utterance)
+    utterance.onstart = () => {
+      if (speechToken.current === token) setError(previous => previous === speechErrorMessage || previous.includes('\u8bed\u97f3\u6717\u8bfb') ? '' : previous)
+    }
+    utterance.onerror = event => {
+      if (speechToken.current !== token || event.error === 'interrupted' || event.error === 'canceled') return
+      setError(speechErrorMessage)
+    }
+    utterance.onend = () => {
+      if (speechToken.current === token) setError(previous => previous === speechErrorMessage ? '' : previous)
+    }
+    const start = () => { synth.speak(utterance); synth.resume() }
     if (synth.getVoices().length === 0) synth.onvoiceschanged = () => { synth.onvoiceschanged = null; start() }
     else start()
   }
