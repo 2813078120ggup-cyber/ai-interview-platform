@@ -81,20 +81,6 @@ export function LoginPage() {
             </motion.div>
           </div>
 
-          <motion.div initial={{ opacity: 0, y: 18, scale: .98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: .42, duration: .5 }} className="absolute bottom-10 right-0 hidden w-[360px] rounded-[28px] border border-white/12 bg-white/10 p-4 shadow-2xl backdrop-blur-xl xl:block">
-            <div className="rounded-[22px] bg-white p-4 text-[var(--foreground)]">
-              <div className="flex items-center justify-between">
-                <div><p className="text-xs font-semibold text-[var(--accent)]">LIVE SCORE</p><strong className="mt-1 block text-3xl">86</strong></div>
-                <span className="rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-semibold text-[var(--accent)]">报告已生成</span>
-              </div>
-              <div className="mt-5 space-y-3">
-                {['专业能力', '表达能力', '逻辑思维'].map((label, index) => <div key={label}>
-                  <div className="mb-1 flex justify-between text-xs"><span className="text-muted-foreground">{label}</span><strong>{[88, 82, 90][index]}</strong></div>
-                  <div className="h-2 rounded-full bg-muted"><div className="h-full rounded-full bg-[var(--primary)]" style={{ width: `${[88, 82, 90][index]}%` }} /></div>
-                </div>)}
-              </div>
-            </div>
-          </motion.div>
         </div>
       </motion.div>
     </section>
