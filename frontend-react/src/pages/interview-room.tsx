@@ -49,6 +49,8 @@ const safeJson = <T,>(value: string | undefined, fallback: T): T => {
 const remainingText = (seconds: number) => String(Math.floor(seconds / 60)).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0')
 const roomStateKey = (id: string) => `interviewos_room_state_${id}`
 const draftKey = (id: string, questionId: string) => `interviewos_answer_draft_${id}_${questionId}`
+const browserPlayableVideo = (url: string) => /\.(mp4|webm|ogg)(\?|#|$)/i.test(url)
+const embeddableVirtualUrl = (url: string) => /^https?:\/\//i.test(url) && !browserPlayableVideo(url) && !/\.m3u8(\?|#|$)/i.test(url)
 
 export function InterviewRoom() {
   const { id = '' } = useParams()
@@ -69,6 +71,7 @@ export function InterviewRoom() {
   const [virtualStreamUrl, setVirtualStreamUrl] = useState('')
   const [virtualMessage, setVirtualMessage] = useState('本地数字人待命')
   const [virtualActive, setVirtualActive] = useState(false)
+  const [virtualLoading, setVirtualLoading] = useState(false)
   const [cameraOn, setCameraOn] = useState(false)
   const [listening, setListening] = useState(false)
   const [finishDialogOpen, setFinishDialogOpen] = useState(false)
@@ -86,6 +89,9 @@ export function InterviewRoom() {
   const options = useMemo(() => safeJson<Array<{ key: string; text: string }>>(question?.options, []), [question?.options])
   const followUps = messages.filter(item => item.role === 'assistant').length
   const limit = question ? limits[question.interviewQuestionId] ?? FOLLOW_UP_MAX : FOLLOW_UP_MAX
+  const virtualStreamPlayable = browserPlayableVideo(virtualStreamUrl)
+  const virtualStreamEmbeddable = embeddableVirtualUrl(virtualStreamUrl)
+  const virtualStreamUnsupported = Boolean(virtualStreamUrl) && !virtualStreamPlayable && !virtualStreamEmbeddable
 
   useEffect(() => {
     let cancelled = false
@@ -168,6 +174,7 @@ export function InterviewRoom() {
   }
 
   async function requestVirtualHuman(text: string) {
+    setVirtualLoading(true)
     try {
       const result = await request<VirtualHumanResponse>('/v1/virtual-human/speak', {
         method: 'POST',
@@ -182,6 +189,8 @@ export function InterviewRoom() {
       setVirtualActive(false)
       setVirtualMessage(reason instanceof Error ? reason.message : '虚拟人服务暂不可用，已降级本地朗读')
       return false
+    } finally {
+      setVirtualLoading(false)
     }
   }
 
@@ -361,7 +370,7 @@ export function InterviewRoom() {
 
     {error && <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>}
 
-    <div className="grid gap-5 xl:grid-cols-[240px_minmax(0,1fr)_310px]">
+    <div className="grid gap-5 xl:grid-cols-[240px_minmax(0,1fr)_360px]">
       <Card className="h-fit p-3">
         <div className="flex justify-between px-2 py-2"><strong>面试题目</strong><span className="text-sm text-muted-foreground">{active + 1}/{questions.length}</span></div>
         <div className="mx-2 h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full bg-[var(--primary)]" style={{ width: Math.round(((active + 1) / questions.length) * 100) + '%' }} /></div>
@@ -381,14 +390,38 @@ export function InterviewRoom() {
 
       <div className="space-y-5">
         <Card className="overflow-hidden p-0">
-          <div className="soft-emphasis-panel relative grid aspect-video place-items-center overflow-hidden">
-            {virtualStreamUrl && /^https?:\/\//i.test(virtualStreamUrl)
-              ? <video src={virtualStreamUrl} autoPlay muted playsInline controls className="absolute inset-0 h-full w-full object-cover" />
-              : <><div className="absolute h-40 w-40 animate-[spin_8s_linear_infinite] rounded-full border border-[var(--border)]/50" /><span className="z-10 grid h-20 w-20 place-items-center rounded-[28px] bg-[var(--brand)]/15 shadow-[0_0_45px_rgba(109,93,252,.28)]"><Sparkles className="h-9 w-9 text-[var(--accent)]" /></span></>}
-            <div className="absolute bottom-4 left-4 right-4 rounded-2xl bg-black/35 px-3 py-2 text-center text-white backdrop-blur-md"><p className="font-bold">{virtualActive ? '讯飞虚拟人' : 'AI 面试官'}</p><p className="mt-1 text-xs text-white/75">{virtualMessage}</p></div>
+          <div className="relative min-h-[360px] overflow-hidden bg-[radial-gradient(circle_at_50%_16%,rgba(235,214,255,.75),transparent_36%),linear-gradient(180deg,#fff7fb_0%,#f2ebe2_100%)] dark:bg-[radial-gradient(circle_at_50%_16%,rgba(120,88,170,.35),transparent_36%),linear-gradient(180deg,#211b19_0%,#151210_100%)]">
+            <div className="absolute left-4 top-4 z-20 rounded-full border border-white/55 bg-white/75 px-3 py-1 text-xs font-bold text-[#8a5f3f] shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/10 dark:text-amber-100">
+              {virtualActive ? '讯飞虚拟人已接入' : '本地数字人兜底'}
+            </div>
+            {virtualStreamPlayable && <video src={virtualStreamUrl} autoPlay muted playsInline controls className="absolute inset-0 h-full w-full object-cover" />}
+            {virtualStreamEmbeddable && <iframe src={virtualStreamUrl} title="讯飞虚拟人" className="absolute inset-0 h-full w-full border-0" allow="autoplay; microphone; camera; fullscreen" />}
+            {!virtualStreamUrl && <div className="absolute inset-0 grid place-items-center">
+              <div className="relative grid h-56 w-56 place-items-center">
+                <div className="absolute inset-0 rounded-full border border-dashed border-[#b17653]/35" />
+                <div className="absolute h-40 w-40 animate-[spin_10s_linear_infinite] rounded-full border border-[#b17653]/20" />
+                <span className="z-10 grid h-24 w-24 place-items-center rounded-[32px] bg-[#11100f] text-white shadow-[0_24px_80px_rgba(119,83,59,.28)]"><Sparkles className="h-10 w-10" /></span>
+              </div>
+            </div>}
+            {virtualStreamUnsupported && <div className="absolute inset-4 grid place-items-center rounded-[26px] border border-dashed border-[#b17653]/30 bg-white/60 p-5 text-center backdrop-blur-xl dark:bg-black/25">
+              <div>
+                <p className="text-lg font-bold">虚拟人会话已启动</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">讯飞返回的流地址当前浏览器不能直接播放。请在讯飞控制台选择 HLS/WebRTC/可嵌入播放页，或在服务端增加 RTMP 转 HLS。</p>
+                <p className="mt-3 break-all rounded-2xl bg-white/70 px-3 py-2 text-xs text-muted-foreground dark:bg-white/10">{virtualStreamUrl}</p>
+              </div>
+            </div>}
+            <div className="absolute bottom-4 left-4 right-4 z-20 rounded-[22px] border border-white/45 bg-white/78 px-4 py-3 text-[#251c18] shadow-[0_18px_45px_rgba(84,58,41,.18)] backdrop-blur-2xl dark:border-white/10 dark:bg-black/35 dark:text-white">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-bold">{virtualActive ? '讯飞虚拟面试官' : 'AI 面试官'}</p>
+                  <p className="mt-1 line-clamp-2 text-xs leading-5 opacity-75">{virtualLoading ? '正在连接虚拟人服务…' : virtualMessage}</p>
+                </div>
+                <span className={'mt-1 h-2.5 w-2.5 shrink-0 rounded-full ' + (virtualActive ? 'bg-emerald-500 shadow-[0_0_14px_rgba(16,185,129,.7)]' : 'bg-amber-500')} />
+              </div>
+            </div>
           </div>
           <div className="flex items-center justify-between p-4"><div><p className="text-sm font-semibold">语音朗读</p><p className="mt-1 text-xs text-muted-foreground">朗读当前题库原题</p></div><button className="rounded-xl p-2 hover:bg-muted" onClick={() => { setTts(value => !value); window.speechSynthesis?.cancel() }}>{tts ? <Volume2 className="h-4 w-4 text-[var(--accent)]" /> : <VolumeX className="h-4 w-4" />}</button></div>
-          <button onClick={() => void speak(question.content, true)} className="mx-4 mb-4 flex items-center gap-2 rounded-xl bg-muted px-3 py-2 text-xs font-semibold hover:bg-[var(--accent-soft)] hover:text-[var(--accent)]"><Volume2 className="h-3.5 w-3.5" />重新朗读本题</button>
+          <button onClick={() => void speak(question.content, true)} className="mx-4 mb-4 flex items-center gap-2 rounded-xl bg-muted px-3 py-2 text-xs font-semibold hover:bg-[var(--accent-soft)] hover:text-[var(--accent)]"><Volume2 className="h-3.5 w-3.5" />{virtualActive ? '让虚拟人重读本题' : '重新朗读本题'}</button>
         </Card>
         <Card>
           <div className="flex items-center justify-between"><div><p className="font-semibold">我的画面</p><p className="mt-1 text-xs text-muted-foreground">仅本地预览</p></div><Button variant="secondary" className="h-9 px-3" onClick={() => void camera()}><Camera className="h-4 w-4" />{cameraOn ? '关闭' : '开启'}</Button></div>
