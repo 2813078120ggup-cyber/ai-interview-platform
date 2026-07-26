@@ -61,13 +61,11 @@ public class AiProviderService {
             return Optional.of(toRuntimeProvider(xunfeiConfig));
         }
 
-        AiProviderConfig config = mapper.selectOne(new LambdaQueryWrapper<AiProviderConfig>()
-                .eq(AiProviderConfig::getKind, "virtual-human")
-                .eq(AiProviderConfig::getEnabled, 1)
-                .orderByAsc(AiProviderConfig::getId)
-                .last("LIMIT 1"));
-        if (config == null) return Optional.empty();
-        return Optional.of(toRuntimeProvider(config));
+        // Do not silently select a legacy generic virtual-human provider.
+        // It may refer to an avatar or voice granted to another iFlytek
+        // service, and would turn a configuration error into a misleading
+        // authentication failure in the browser.
+        return Optional.empty();
     }
 
     private RuntimeProvider toRuntimeProvider(AiProviderConfig config) {

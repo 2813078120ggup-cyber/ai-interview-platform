@@ -197,6 +197,8 @@ export function InterviewRoom() {
     if (virtualLoading || finished) return
     setVirtualLoading(true)
     setError('')
+    let runtimeResource = ''
+    let latestSdkError = ''
     try {
       const config = await request<SdkConfig>('/v1/virtual-human/sdk-config')
       if (!config.enabled || !config.signedUrl || !config.appId || !config.sceneId || !config.avatarId || !config.vcn) {
@@ -221,6 +223,10 @@ export function InterviewRoom() {
       const player = avatar.player ?? avatar.createPlayer?.()
       const runtime: AvatarRuntime = { avatar, player, events: sdk.SDKEvents, playerEvents: sdk.PlayerEvents }
       avatarRuntime.current = runtime
+      runtimeResource = `当前请求：形象 ${config.avatarId} · 发音人 ${config.vcn}。`
+      // `start()` may reject after the SDK has emitted its detailed error
+      // event. Keep that payload so the UI does not reduce an actionable
+      // iFlytek code to the generic "avatar authentication failed" text.
 
       avatar.on?.(sdk.SDKEvents.connected, () => setVirtualMessage('讯飞虚拟面试官已连接，可以开始面试。'))
       avatar.on?.(sdk.SDKEvents.disconnected, () => {
@@ -229,10 +235,11 @@ export function InterviewRoom() {
         setVirtualMessage('讯飞虚拟人连接已关闭，授权会话已释放。')
       })
       avatar.on?.(sdk.SDKEvents.error, (event: unknown) => {
+        latestSdkError = avatarErrorText(event)
         setVirtualActive(false)
         setListening(false)
         setThinking(false)
-        setVirtualMessage('讯飞虚拟人运行异常：' + avatarErrorText(event))
+        setVirtualMessage('讯飞虚拟人运行异常：' + latestSdkError + ' ' + runtimeResource)
       })
       avatar.on?.(sdk.SDKEvents.asr, (event: unknown) => {
         const text = eventText(event)
@@ -252,9 +259,6 @@ export function InterviewRoom() {
         stream: { protocol: 'xrtc', fps: 25, bitrate: xunfeiStreamBitrateBps, alpha: 1 },
         avatar: { avatar_id: config.avatarId, width: 720, height: 1280 },
         tts: { vcn: config.vcn, speed: 50, pitch: 50, volume: 50 },
-        subtitle: { subtitle: 1, font_color: '#FFFFFF' },
-        audio: { sample_rate: 16000 },
-        air: { air: 1, add_nonsemantic: 1 },
       })
       // Keep the player wrapper mounted: XRTC can connect successfully but
       // render no frame when it starts inside a display:none container.
@@ -266,7 +270,8 @@ export function InterviewRoom() {
     } catch (reason) {
       await disposeAvatar(false)
       setVirtualActive(false)
-      setVirtualMessage(reason instanceof Error ? reason.message : '讯飞虚拟人连接失败。')
+      const failure = latestSdkError || (reason instanceof Error ? reason.message : '讯飞虚拟人连接失败。')
+      setVirtualMessage(`${failure} ${runtimeResource ?? ''}`.trim())
     } finally {
       setVirtualLoading(false)
     }
