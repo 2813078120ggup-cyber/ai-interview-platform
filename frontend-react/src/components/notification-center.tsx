@@ -69,11 +69,9 @@ export function NotificationCenter({ role }: NotificationCenterProps) {
     return items.filter(item => item.candidate.userId === id || item.candidate.username === username)
   }, [current?.id, current?.username, items, role])
 
-  const unreadCount =
-    role === 'candidate' ? visibleItems.filter(item => !item.readBy.includes(currentUserId)).length : visibleItems.length
+  const unreadCount = visibleItems.filter(item => !item.readBy.includes(currentUserId)).length
 
   const markRead = (item: InterviewNotification) => {
-    if (role !== 'candidate') return
     markNotificationRead(item.id, currentUserId)
   }
 
@@ -94,21 +92,21 @@ export function NotificationCenter({ role }: NotificationCenterProps) {
       </Button>
 
       {open && (
-        <div className="absolute right-0 top-12 z-50 w-[min(380px,calc(100vw-32px))] overflow-hidden rounded-[28px] border border-[#e7ded2] bg-[#fffdf8]/95 shadow-[0_24px_70px_rgba(42,31,20,0.18)] backdrop-blur-xl">
-          <div className="flex items-start justify-between gap-4 border-b border-[#eee5da] p-5">
+        <div className="absolute right-0 top-12 z-50 w-[min(380px,calc(100vw-32px))] overflow-hidden rounded-[28px] border border-border bg-surface/95 text-foreground shadow-[0_24px_70px_rgba(42,31,20,0.18)] backdrop-blur-xl dark:shadow-[0_28px_80px_rgba(0,0,0,0.42)]">
+          <div className="flex items-start justify-between gap-4 border-b border-border p-5">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a06d4d]">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--accent)]">
                 {role === 'admin' ? 'SENT NOTICES' : 'NOTIFICATION CENTER'}
               </p>
-              <h3 className="mt-1 text-xl font-black text-[#171513]">通知中心</h3>
-              <p className="mt-1 text-sm text-[#7b746d]">
+              <h3 className="mt-1 text-xl font-black text-foreground">通知中心</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
                 {role === 'admin' ? '查看最近发送给候选人的面试通知。' : '查看管理员发来的面试安排和练习提醒。'}
               </p>
             </div>
-            {role === 'candidate' && visibleItems.length > 0 && (
+            {visibleItems.length > 0 && unreadCount > 0 && (
               <Button
                 variant="secondary"
-                className="h-9 rounded-full px-3 text-xs"
+                className="h-8 shrink-0 whitespace-nowrap rounded-full px-2.5 text-[11px] leading-none"
                 onClick={() => markAllNotificationsRead(currentUserId)}
               >
                 <CheckCheck className="h-3.5 w-3.5" />
@@ -120,38 +118,38 @@ export function NotificationCenter({ role }: NotificationCenterProps) {
           <div className="max-h-[440px] overflow-y-auto p-3">
             {visibleItems.length === 0 ? (
               <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
-                <span className="flex h-14 w-14 items-center justify-center rounded-3xl bg-[#f3eee6] text-[#a06d4d]">
+                <span className="flex h-14 w-14 items-center justify-center rounded-3xl bg-muted text-[var(--accent)]">
                   <Inbox className="h-6 w-6" />
                 </span>
-                <p className="mt-4 text-base font-black text-[#171513]">暂无通知</p>
-                <p className="mt-1 text-sm text-[#8d857d]">
+                <p className="mt-4 text-base font-black text-foreground">暂无通知</p>
+                <p className="mt-1 text-sm text-muted-foreground">
                   {role === 'admin' ? '可以在面试管理列表里按具体面试发送通知。' : '新的面试通知会出现在这里。'}
                 </p>
               </div>
             ) : (
               <div className="space-y-2">
                 {visibleItems.map(item => {
-                  const unread = role === 'candidate' && !item.readBy.includes(currentUserId)
+                  const unread = !item.readBy.includes(currentUserId)
                   return (
                     <button
                       key={item.id}
                       type="button"
                       className={cn(
-                        'w-full rounded-[22px] border p-4 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(42,31,20,0.12)]',
-                        unread ? 'border-[#d7b99f] bg-[#fff8ec]' : 'border-[#eee5da] bg-white/70',
+                        'w-full rounded-[22px] border p-4 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(42,31,20,0.12)] dark:hover:shadow-[0_18px_42px_rgba(0,0,0,0.36)]',
+                        unread ? 'border-[var(--accent)]/40 bg-[var(--accent-soft)]/80 dark:bg-[var(--accent)]/10' : 'border-border bg-background/70 hover:bg-muted/60',
                       )}
                       onClick={() => markRead(item)}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="font-black text-[#171513]">{item.title}</p>
-                          <p className="mt-1 line-clamp-3 text-sm leading-6 text-[#6f6861]">{item.content}</p>
+                          <p className="font-black text-foreground">{item.title}</p>
+                          <p className="mt-1 line-clamp-3 text-sm leading-6 text-muted-foreground">{item.content}</p>
                         </div>
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#f2eadf] text-[#a06d4d]">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-[var(--accent)]">
                           <Send className="h-4 w-4" />
                         </span>
                       </div>
-                      <div className="mt-3 flex flex-wrap gap-2 text-xs text-[#8d857d]">
+                      <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
                         {role === 'admin' && <span>发送给：{item.candidate.realName || item.candidate.username}</span>}
                         {item.interviewTitle && <span>面试：{item.interviewTitle}</span>}
                         <span>{shortDate(item.createdAt)}</span>
