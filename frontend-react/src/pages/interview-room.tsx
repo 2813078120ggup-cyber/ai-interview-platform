@@ -83,6 +83,11 @@ export function InterviewRoom() {
   const video = useRef<HTMLVideoElement>(null)
   const avatarRoot = useRef<HTMLDivElement>(null)
   const avatarRuntime = useRef<AvatarRuntime | null>(null)
+  // React state updates are asynchronous. Keep the session lock in refs so a
+  // double click, StrictMode remount, or a delayed event cannot open two XRTC
+  // sessions before `virtualLoading` has rendered.
+  const avatarStartLock = useRef(false)
+  const avatarAttempt = useRef(0)
   const stream = useRef<MediaStream | null>(null)
   const lastReadQuestionId = useRef('')
   const currentQuestion = useRef<Question | undefined>(undefined)
@@ -152,17 +157,47 @@ export function InterviewRoom() {
     void readQuestion(question)
   }, [virtualActive, tts, question?.interviewQuestionId, choiceQuestion])
 
-  useEffect(() => () => {
-    stream.current?.getTracks().forEach(track => track.stop())
-    if (nlpTimeout.current) window.clearTimeout(nlpTimeout.current)
-    void disposeAvatar(false)
+  useEffect(() => {
+    const releaseRemoteSession = () => disposeAvatarImmediately()
+    window.addEventListener('pagehide', releaseRemoteSession)
+    window.addEventListener('beforeunload', releaseRemoteSession)
+    return () => {
+      stream.current?.getTracks().forEach(track => track.stop())
+      releaseRemoteSession()
+      window.removeEventListener('pagehide', releaseRemoteSession)
+      window.removeEventListener('beforeunload', releaseRemoteSession)
+    }
   }, [])
 
-  async function disposeAvatar(updateState = true) {
+  function invalidateAvatarAttempt() {
+    avatarAttempt.current += 1
+    avatarStartLock.current = false
+  }
+
+  function detachAvatarRuntime() {
     const runtime = avatarRuntime.current
     avatarRuntime.current = null
     lastReadQuestionId.current = ''
     if (nlpTimeout.current) window.clearTimeout(nlpTimeout.current)
+    return runtime
+  }
+
+  // `beforeunload`/`pagehide` cannot wait for an async recorder shutdown.
+  // Send the SDK stop frame synchronously first so the single iFlytek route is
+  // released even when the candidate refreshes or navigates away.
+  function disposeAvatarImmediately() {
+    invalidateAvatarAttempt()
+    const runtime = detachAvatarRuntime()
+    if (!runtime) return
+    try { void runtime.recorder?.stopRecord?.(true) } catch { /* cleanup only */ }
+    try { runtime.recorder?.destroy?.() } catch { /* cleanup only */ }
+    try { runtime.avatar.stop?.() } catch { /* SDK releases remote avatar session */ }
+    try { runtime.avatar.destroy?.() } catch { /* cleanup only */ }
+  }
+
+  async function disposeAvatar(updateState = true, invalidateAttempt = true) {
+    if (invalidateAttempt) invalidateAvatarAttempt()
+    const runtime = detachAvatarRuntime()
     if (runtime) {
       try { await runtime.recorder?.stopRecord?.(true) } catch { /* recorder can already be stopped */ }
       try { runtime.recorder?.destroy?.() } catch { /* cleanup only */ }
@@ -192,7 +227,10 @@ export function InterviewRoom() {
   }
 
   async function startAvatar() {
-    if (virtualLoading || finished) return
+    if (avatarStartLock.current || avatarRuntime.current || finished) return
+    avatarStartLock.current = true
+    const startAttempt = ++avatarAttempt.current
+    const isCurrentAttempt = () => avatarAttempt.current === startAttempt
     setVirtualLoading(true)
     setError('')
     let runtimeResource = ''
@@ -204,7 +242,8 @@ export function InterviewRoom() {
       }
       if (!avatarRoot.current) throw new Error('虚拟人画布尚未准备完成。')
       setVirtualMessage(`正在连接讯飞虚拟人：形象 ${config.avatarId}，发音人 ${config.vcn}。`)
-      await disposeAvatar(false)
+      await disposeAvatar(false, false)
+      if (!isCurrentAttempt()) return
       avatarRoot.current.replaceChildren()
       // The idle UI hides the mount point. Reveal it before start so XRTC can
       // measure and render its first frame instead of attaching off-screen.
@@ -215,6 +254,7 @@ export function InterviewRoom() {
       // Vite does not attempt to transform a public ESM import in dev mode.
       const sdkUrl = new URL(sdkEntry, window.location.origin).href
       const sdk = await import(/* @vite-ignore */ sdkUrl) as any
+      if (!isCurrentAttempt()) return
       const AvatarPlatform = sdk.default
       if (!AvatarPlatform) throw new Error('讯飞 Web SDK 未加载成功，请检查 SDK 静态资源。')
       // Match guides/avatar-sdk-demo exactly: create a plain platform instance,
@@ -274,17 +314,27 @@ export function InterviewRoom() {
       // Keep the player wrapper mounted: XRTC can connect successfully but
       // render no frame when it starts inside a display:none container.
       await avatar.start({ wrapper: avatarRoot.current })
+      if (!isCurrentAttempt()) {
+        try { avatar.stop?.() } catch { /* session was already invalidated */ }
+        try { avatar.destroy?.() } catch { /* local cleanup only */ }
+        return
+      }
       setVirtualActive(true)
       window.requestAnimationFrame(() => avatarRoot.current?.removeAttribute('style'))
       setVirtualMessage('讯飞虚拟面试官已就绪。')
       await player?.resume?.().catch(() => undefined)
     } catch (reason) {
-      await disposeAvatar(false)
-      setVirtualActive(false)
-      const failure = latestSdkError || (reason instanceof Error ? reason.message : '讯飞虚拟人连接失败。')
-      setVirtualMessage(`${failure} ${runtimeResource ?? ''}`.trim())
+      if (isCurrentAttempt()) {
+        await disposeAvatar(false, false)
+        setVirtualActive(false)
+        const failure = latestSdkError || (reason instanceof Error ? reason.message : '讯飞虚拟人连接失败。')
+        setVirtualMessage(`${failure} ${runtimeResource ?? ''}`.trim())
+      }
     } finally {
-      setVirtualLoading(false)
+      if (isCurrentAttempt()) {
+        avatarStartLock.current = false
+        setVirtualLoading(false)
+      }
     }
   }
 
