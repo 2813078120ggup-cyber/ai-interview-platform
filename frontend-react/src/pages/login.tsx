@@ -40,9 +40,9 @@ const fieldClass =
   'mt-2 h-12 w-full rounded-[18px] border border-border bg-surface/72 px-4 text-sm outline-none transition duration-200 placeholder:text-muted-foreground/55 hover:border-[color-mix(in_srgb,var(--accent)_36%,var(--border))] focus:border-[var(--primary)] focus:bg-surface focus:shadow-[0_0_0_5px_color-mix(in_srgb,var(--accent)_12%,transparent)]'
 
 const features = [
-  { title: '智能追问', desc: '根据回答继续提问，还原真实面试节奏', icon: Mic },
-  { title: '评测报告', desc: '自动评分、四维画像和改进建议', icon: BarChart3 },
-  { title: '断点续练', desc: '草稿自动保存，刷新后继续作答', icon: RotateCcw },
+  { title: '智能追问', desc: '根据回答持续追问', icon: Mic },
+  { title: '评测报告', desc: '自动评分与改进建议', icon: BarChart3 },
+  { title: '断点续练', desc: '自动保存草稿', icon: RotateCcw },
 ]
 
 const usernamePattern = /^[A-Za-z][A-Za-z0-9_]{3,31}$/
@@ -140,7 +140,7 @@ export function LoginPage() {
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, ease: 'easeOut' }}
-          className="login-template-panel relative hidden overflow-hidden rounded-[24px] border border-[#ddd7cd] bg-[linear-gradient(165deg,#fbfaf6_0%,#eee7dd_100%)] p-8 lg:grid lg:grid-rows-[auto_auto_minmax(260px,1fr)_auto] lg:gap-6"
+          className="login-template-panel relative hidden overflow-hidden rounded-[24px] border border-[#ddd7cd] bg-[linear-gradient(165deg,#fbfaf6_0%,#eee7dd_100%)] p-8 lg:grid lg:grid-rows-[auto_auto_minmax(310px,1fr)_auto] lg:gap-5"
           style={reduceMotion ? undefined : { rotateX: tiltX, rotateY: tiltY, transformPerspective: 1400 }}
         >
           <div className="absolute inset-0 login-particle-layer">
@@ -205,7 +205,7 @@ export function LoginPage() {
             </motion.p>
           </div>
 
-          <div className="relative z-10 grid min-h-[260px] place-items-center py-2">
+          <div className="relative z-10 grid min-h-[310px] place-items-center py-1">
             <div className="login-ai-stage w-full max-w-[440px]">
               <span className="login-pulse-ring" />
               <span className="login-pulse-ring delay-1000" />
@@ -243,15 +243,15 @@ export function LoginPage() {
                 transition={{ delay: 0.36 + index * 0.08, duration: 0.38 }}
                 whileHover={reduceMotion ? undefined : { y: -6, scale: 1.018 }}
                 whileTap={reduceMotion ? undefined : { scale: 0.985 }}
-                className="login-magnetic-card login-feature-card rounded-2xl border border-[#ded8ce] bg-white/72 p-3.5 shadow-[0_10px_34px_rgba(20,18,17,.05)] backdrop-blur"
+                className="login-magnetic-card login-feature-card rounded-2xl border border-[#ded8ce] bg-white/72 p-3 shadow-[0_10px_34px_rgba(20,18,17,.05)] backdrop-blur"
               >
-                <div className="flex h-full flex-col gap-3">
+                <div className="flex h-full items-center gap-3">
                   <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#f0ece5] text-[var(--accent)]">
                     <Icon className="h-4 w-4" />
                   </span>
-                  <div>
-                    <p className="font-bold leading-none">{title}</p>
-                    <p className="mt-2 text-xs leading-5 text-muted-foreground">{desc}</p>
+                  <div className="min-w-0">
+                    <p className="truncate font-bold leading-5">{title}</p>
+                    <p className="mt-0.5 truncate whitespace-nowrap text-[11px] leading-5 text-muted-foreground">{desc}</p>
                   </div>
                 </div>
               </motion.div>

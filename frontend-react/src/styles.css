@@ -300,8 +300,8 @@ button:disabled { cursor: not-allowed; }
 
 .login-ai-stage {
   position: relative;
-  min-height: 290px;
-  overflow: hidden;
+  min-height: 310px;
+  overflow: visible;
   border-radius: 30px;
   border: 0;
   background:
@@ -314,7 +314,7 @@ button:disabled { cursor: not-allowed; }
   content: "";
   position: absolute;
   left: 50%;
-  top: 39%;
+  top: 43%;
   width: 255px;
   height: 255px;
   border-radius: 999px;
@@ -335,7 +335,7 @@ button:disabled { cursor: not-allowed; }
   content: "";
   position: absolute;
   left: 50%;
-  top: 39%;
+  top: 43%;
   width: 130px;
   height: 130px;
   border-radius: 999px;
@@ -356,7 +356,7 @@ button:disabled { cursor: not-allowed; }
 .login-pulse-ring {
   position: absolute;
   left: 50%;
-  top: 39%;
+  top: 43%;
   border-radius: 999px;
   border: 1.5px solid color-mix(in srgb, var(--foreground) 12%, transparent);
   transform: translate(-50%, -50%);
@@ -372,7 +372,7 @@ button:disabled { cursor: not-allowed; }
 .login-solid-orbit {
   position: absolute;
   left: 50%;
-  top: 39%;
+  top: 43%;
   border-radius: 999px;
   transform: translate(-50%, -50%);
 }
@@ -404,7 +404,7 @@ button:disabled { cursor: not-allowed; }
 .login-ai-core {
   position: absolute;
   left: 50%;
-  top: 39%;
+  top: 43%;
   z-index: 3;
   display: grid;
   width: 58px;
@@ -426,7 +426,7 @@ button:disabled { cursor: not-allowed; }
 .login-orbit-icon {
   position: absolute;
   left: 50%;
-  top: 39%;
+  top: 43%;
   z-index: 4;
   display: grid;
   width: 38px;
@@ -450,7 +450,7 @@ button:disabled { cursor: not-allowed; }
 .login-neural-svg {
   position: absolute;
   left: 50%;
-  top: 39%;
+  top: 43%;
   z-index: 2;
   width: 260px;
   height: 260px;
@@ -471,7 +471,7 @@ button:disabled { cursor: not-allowed; }
 
 .login-waveform {
   position: absolute;
-  bottom: 28px;
+  bottom: 12px;
   left: 50%;
   z-index: 3;
   display: flex;
@@ -540,7 +540,7 @@ button:disabled { cursor: not-allowed; }
 }
 
 .login-feature-card {
-  min-height: 132px;
+  min-height: 82px;
   display: flex;
   align-items: center;
   border-color: color-mix(in srgb, var(--accent) 16%, var(--border)) !important;
