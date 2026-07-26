@@ -258,15 +258,19 @@ export function InterviewRoom() {
       // signed URL required by the official SDK, then this page performs the
       // same start/text/stop lifecycle as the supplied demo.
       avatar.setApiInfo({ signedUrl: config.signedUrl, appId: config.appId, sceneId: config.sceneId })
-      avatar.setGlobalParams({
-        // The supplied 3.1 SDK converts a supplied bitrate from bps to kbps.
-        // Passing `2000` therefore becomes only 1 kbps and fails the provider's
-        // >= 200 validation. Omit it as in the official demo so the SDK keeps
-        // its built-in 1,000,000 bps default (about 976 kbps).
-        stream: { protocol: 'xrtc', alpha: 1, fps: 25 },
+      const globalParams = {
+        // This is intentionally identical to the supplied official React demo:
+        // do not send `bitrate` or `fps`. In SDK 3.1, a supplied bitrate is
+        // converted from bps to kbps; `2000` becomes 1 kbps and fails the
+        // provider validation (minimum 200). Omitting it uses the SDK default.
+        stream: { protocol: 'xrtc', alpha: 1 },
         avatar: { avatar_id: config.avatarId, width: 720, height: 1280 },
         tts: { vcn: config.vcn },
-      })
+      }
+      // Safe browser-side verification: this contains no secret or signed URL.
+      // It makes it possible to confirm the exact start payload from DevTools.
+      console.info('[iFlytek Avatar] official-demo global params', globalParams)
+      avatar.setGlobalParams(globalParams)
       // Keep the player wrapper mounted: XRTC can connect successfully but
       // render no frame when it starts inside a display:none container.
       await avatar.start({ wrapper: avatarRoot.current })
