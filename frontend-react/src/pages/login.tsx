@@ -45,6 +45,11 @@ const features = [
   { title: '断点续练', desc: '草稿自动保存，刷新后继续作答', icon: RotateCcw },
 ]
 
+const usernamePattern = /^[A-Za-z][A-Za-z0-9_]{3,31}$/
+const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)[!-~]{8,64}$/
+const usernameRule = '4–32 位，英文开头，仅限英文、数字和下划线'
+const passwordRule = '8–64 位，须包含字母和数字；不支持中文或空格'
+
 const particles = [
   [8, 74, 3, 9, 0],
   [88, 18, 2, 11, 1.2],
@@ -89,6 +94,14 @@ export function LoginPage() {
     setError('')
     try {
       if (mode === 'register') {
+        if (!usernamePattern.test(form.username)) {
+          setError(`用户名格式不正确：${usernameRule}`)
+          return
+        }
+        if (!passwordPattern.test(form.password)) {
+          setError(`密码格式不正确：${passwordRule}`)
+          return
+        }
         await request('/v1/auth/register', { method: 'POST', body: JSON.stringify(form) })
         setMode('login')
         setForm(previous => ({ ...previous, password: '' }))
@@ -365,10 +378,13 @@ export function LoginPage() {
                       onChange={event => setForm({ ...form, username: event.target.value })}
                       className={`${fieldClass} pl-11`}
                       required
+                      maxLength={mode === 'register' ? 32 : undefined}
+                      pattern={mode === 'register' ? '[A-Za-z][A-Za-z0-9_]{3,31}' : undefined}
                       autoComplete="username"
                       placeholder="例如 candidate_liu"
                     />
                   </div>
+                  {mode === 'register' && <p className="mt-2 text-xs font-normal leading-5 text-muted-foreground">{usernameRule}</p>}
                 </label>
 
                 <label className="block text-sm font-bold">
@@ -382,8 +398,9 @@ export function LoginPage() {
                       className={`${fieldClass} pl-11 pr-12`}
                       required
                       minLength={8}
+                      maxLength={mode === 'register' ? 64 : undefined}
                       autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                      placeholder="请输入密码"
+                      placeholder={mode === 'register' ? '请输入安全密码' : '请输入密码'}
                     />
                     <button
                       type="button"
@@ -394,6 +411,7 @@ export function LoginPage() {
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
+                  {mode === 'register' && <p className="mt-2 text-xs font-normal leading-5 text-muted-foreground">{passwordRule}</p>}
                 </label>
 
                 {mode === 'register' && (

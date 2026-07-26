@@ -12,6 +12,9 @@ type User = { id: string; username: string; realName: string; email?: string; ph
 type Role = { id: string; roleCode: string; roleName: string }
 type Page<T> = { records: T[]; total: number }
 
+const usernamePattern = /^[A-Za-z][A-Za-z0-9_]{3,31}$/
+const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)[!-~]{8,64}$/
+
 export function AdminCandidates() {
   const nav = useNavigate()
   const [items, setItems] = useState<User[]>([])
@@ -58,6 +61,8 @@ export function AdminCandidates() {
     const candidate = roles.find(role => role.roleCode === 'CANDIDATE')
     if (!candidate) { setError('未找到 CANDIDATE 角色'); return }
     if (!form.username || !form.password || !form.realName) { setError('请填写账号、密码和姓名'); return }
+    if (!usernamePattern.test(form.username)) { setError('账号须为 4-32 位英文开头的英文、数字或下划线'); return }
+    if (!passwordPattern.test(form.password)) { setError('初始密码须为 8-64 位英文、数字或半角符号，且包含字母和数字'); return }
     setSaving(true)
     try {
       const user = await request<User>('/v1/users', { method: 'POST', body: JSON.stringify({ ...form, roleIds: [candidate.id] }) })
@@ -85,9 +90,9 @@ export function AdminCandidates() {
     {open && <div className="fixed inset-0 z-50 bg-black/35 p-4 backdrop-blur-sm"><div className="mx-auto my-12 max-w-lg rounded-[30px] bg-surface p-7 shadow-2xl"><div className="flex justify-between"><div><p className="text-sm font-semibold text-[var(--accent)]">NEW CANDIDATE</p><h2 className="mt-1 text-2xl font-bold">新增候选人</h2></div><button onClick={() => setOpen(false)} className="rounded-full p-2 hover:bg-muted"><X className="h-5 w-5" /></button></div><div className="mt-6 grid gap-4 sm:grid-cols-2">{([
       ['realName', '姓名', '刘洋'],
       ['username', '账号', 'candidate_liu'],
-      ['password', '初始密码', '至少 8 位'],
+      ['password', '初始密码', '8-64 位，字母+数字'],
       ['email', '邮箱', 'name@example.com'],
       ['phone', '手机号', '可选'],
-    ] as const).map(([key, label, placeholder]) => <label key={key} className="text-sm font-semibold">{label}<input type={key === 'password' ? 'password' : 'text'} value={form[key]} onChange={event => setForm({ ...form, [key]: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal outline-none focus:border-[var(--accent)]" placeholder={placeholder} /></label>)}</div><div className="mt-7 flex justify-end gap-3"><Button variant="secondary" onClick={() => setOpen(false)}>取消</Button><Button disabled={saving} onClick={() => void create()}>{saving ? '创建中…' : '创建候选人'}</Button></div></div></div>}
+    ] as const).map(([key, label, placeholder]) => <label key={key} className="text-sm font-semibold">{label}<input type={key === 'password' ? 'password' : 'text'} value={form[key]} onChange={event => setForm({ ...form, [key]: event.target.value })} maxLength={key === 'username' ? 32 : key === 'password' ? 64 : undefined} pattern={key === 'username' ? '[A-Za-z][A-Za-z0-9_]{3,31}' : undefined} className="mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 font-normal outline-none focus:border-[var(--accent)]" placeholder={placeholder} /></label>)}</div><p className="mt-4 text-xs leading-5 text-muted-foreground">账号：英文开头，仅限英文、数字、下划线；初始密码：8–64 位英文、数字或半角符号，且包含字母和数字。</p><div className="mt-7 flex justify-end gap-3"><Button variant="secondary" onClick={() => setOpen(false)}>取消</Button><Button disabled={saving} onClick={() => void create()}>{saving ? '创建中…' : '创建候选人'}</Button></div></div></div>}
   </div>
 }

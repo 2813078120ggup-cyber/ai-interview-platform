@@ -1,6 +1,8 @@
 package com.tyut.aiinterview.auth;
 
+import com.tyut.aiinterview.security.AccountCredentialPolicy;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 
@@ -8,8 +10,8 @@ public final class AuthDtos {
     private AuthDtos() {}
 
     public record RegisterRequest(
-            @NotBlank @Size(max = 64) String username,
-            @NotBlank @Size(min = 8, max = 72) String password,
+            @NotBlank @Pattern(regexp = AccountCredentialPolicy.USERNAME_REGEX, message = AccountCredentialPolicy.USERNAME_MESSAGE) String username,
+            @NotBlank @Pattern(regexp = AccountCredentialPolicy.PASSWORD_REGEX, message = AccountCredentialPolicy.PASSWORD_MESSAGE) String password,
             @NotBlank @Size(max = 64) String realName,
             String email, String phone) {}
 
