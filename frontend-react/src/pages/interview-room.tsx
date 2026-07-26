@@ -20,11 +20,12 @@ type AvatarRuntime = { avatar: any; player?: any; recorder?: any; events: any; p
 const FOLLOW_UP_MIN = 2
 const FOLLOW_UP_MAX = 5
 const choiceTypes = ['single_choice', 'multiple_choice', 'true_false']
-const sdkEntry = '/sdk/avatar-sdk-web_3.2.3.1002/esm/index.js'
-// The iFlytek 3.2 Web SDK converts this bps input to kbps before submitting
-// `parameter.avatar.stream.bitrate`. Keep it well above the service minimum
-// of 200 kbps; 800000 bps is transmitted as roughly 781 kbps.
-const xunfeiStreamBitrateBps = 800_000
+// Keep the official demo SDK entry and its dynamic XRTC player chunks together
+// under public/. Runtime import avoids Vite transforming a public ESM module.
+const sdkEntry = '/sdk/avatar-sdk-web_3.1.0.1011/index.js'
+// This is the official demo's safe XRTC bitrate setting (kbps). It also meets
+// the provider's minimum requirement of 200 for avatar.stream.bitrate.
+const xunfeiStreamBitrate = 2_000
 const roomStateKey = (id: string) => `interviewos_room_state_${id}`
 const draftKey = (id: string, questionId: string) => `interviewos_answer_draft_${id}_${questionId}`
 const remainingText = (seconds: number) => String(Math.floor(seconds / 60)).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0')
@@ -219,7 +220,9 @@ export function InterviewRoom() {
       const sdk = await import(/* @vite-ignore */ sdkUrl) as any
       const AvatarPlatform = sdk.default
       if (!AvatarPlatform) throw new Error('讯飞 Web SDK 未加载成功，请检查 SDK 静态资源。')
-      const avatar = new AvatarPlatform({ useInlinePlayer: true })
+      // Match guides/avatar-sdk-demo exactly: create a plain platform instance,
+      // bind events, configure API/global parameters, then start with wrapper.
+      const avatar = new AvatarPlatform()
       const player = avatar.player ?? avatar.createPlayer?.()
       const runtime: AvatarRuntime = { avatar, player, events: sdk.SDKEvents, playerEvents: sdk.PlayerEvents }
       avatarRuntime.current = runtime
@@ -254,11 +257,14 @@ export function InterviewRoom() {
         })
         player.on?.(sdk.PlayerEvents.error, () => setVirtualMessage('虚拟人媒体播放异常，请重新连接。'))
       }
+      // API Secret never enters the browser. The backend creates the short-lived
+      // signed URL required by the official SDK, then this page performs the
+      // same start/text/stop lifecycle as the supplied demo.
       avatar.setApiInfo({ signedUrl: config.signedUrl, appId: config.appId, sceneId: config.sceneId })
       avatar.setGlobalParams({
-        stream: { protocol: 'xrtc', fps: 25, bitrate: xunfeiStreamBitrateBps, alpha: 1 },
+        stream: { protocol: 'xrtc', alpha: 1, bitrate: xunfeiStreamBitrate },
         avatar: { avatar_id: config.avatarId, width: 720, height: 1280 },
-        tts: { vcn: config.vcn, speed: 50, pitch: 50, volume: 50 },
+        tts: { vcn: config.vcn },
       })
       // Keep the player wrapper mounted: XRTC can connect successfully but
       // render no frame when it starts inside a display:none container.
