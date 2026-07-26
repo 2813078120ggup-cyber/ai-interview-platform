@@ -23,9 +23,6 @@ const choiceTypes = ['single_choice', 'multiple_choice', 'true_false']
 // Keep the official demo SDK entry and its dynamic XRTC player chunks together
 // under public/. Runtime import avoids Vite transforming a public ESM module.
 const sdkEntry = '/sdk/avatar-sdk-web_3.1.0.1011/index.js'
-// This is the official demo's safe XRTC bitrate setting (kbps). It also meets
-// the provider's minimum requirement of 200 for avatar.stream.bitrate.
-const xunfeiStreamBitrate = 2_000
 const roomStateKey = (id: string) => `interviewos_room_state_${id}`
 const draftKey = (id: string, questionId: string) => `interviewos_answer_draft_${id}_${questionId}`
 const remainingText = (seconds: number) => String(Math.floor(seconds / 60)).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0')
@@ -262,7 +259,11 @@ export function InterviewRoom() {
       // same start/text/stop lifecycle as the supplied demo.
       avatar.setApiInfo({ signedUrl: config.signedUrl, appId: config.appId, sceneId: config.sceneId })
       avatar.setGlobalParams({
-        stream: { protocol: 'xrtc', alpha: 1, bitrate: xunfeiStreamBitrate },
+        // The supplied 3.1 SDK converts a supplied bitrate from bps to kbps.
+        // Passing `2000` therefore becomes only 1 kbps and fails the provider's
+        // >= 200 validation. Omit it as in the official demo so the SDK keeps
+        // its built-in 1,000,000 bps default (about 976 kbps).
+        stream: { protocol: 'xrtc', alpha: 1, fps: 25 },
         avatar: { avatar_id: config.avatarId, width: 720, height: 1280 },
         tts: { vcn: config.vcn },
       })
