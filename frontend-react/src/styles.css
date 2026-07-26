@@ -300,7 +300,7 @@ button:disabled { cursor: not-allowed; }
 
 .login-ai-stage {
   position: relative;
-  min-height: 330px;
+  min-height: 290px;
   overflow: hidden;
   border-radius: 30px;
   border: 0;
@@ -540,7 +540,7 @@ button:disabled { cursor: not-allowed; }
 }
 
 .login-feature-card {
-  min-height: 116px;
+  min-height: 132px;
   display: flex;
   align-items: center;
   border-color: color-mix(in srgb, var(--accent) 16%, var(--border)) !important;
